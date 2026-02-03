@@ -1,25 +1,54 @@
 # Basher for Claude Code
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Claude Code](https://img.shields.io/badge/Claude-Code-blueviolet)](https://claude.ai)
+
 > **Build complete applications autonomously using AI — from meeting notes to working code.**
 
 Basher is an automation system that runs Claude Code (Anthropic's AI coding assistant) repeatedly to implement entire software projects without manual intervention. You describe what you want to build, and Basher handles the rest.
 
 ---
 
+## TL;DR
+
+```bash
+# 1. Install
+curl -fsSL https://raw.githubusercontent.com/feelgreatfoodie/basher/main/install.sh | bash
+
+# 2. Initialize in your project
+cd my-project && git init
+~/.basher/basher-init.sh
+
+# 3. Describe what you want (edit ./basher/transcript.txt)
+
+# 4. Generate PRD and convert
+claude            # Start Claude Code
+/prd              # Generate requirements
+/basher-convert   # Convert to tasks
+
+# 5. Run!
+~/.basher/basher.sh
+```
+
+That's it. Basher builds your app while you grab coffee.
+
+---
+
 ## Table of Contents
 
-1. [What is Basher?](#what-is-basher)
-2. [How It Works](#how-it-works)
-3. [Prerequisites](#prerequisites)
-4. [Installation](#installation)
-5. [Quick Start Guide](#quick-start-guide)
-6. [Detailed Walkthrough](#detailed-walkthrough)
-7. [Configuration Options](#configuration-options)
-8. [CacheBash Integration](#cachebash-integration-optional)
-9. [Sharing with Teammates](#sharing-with-teammates)
-10. [Troubleshooting](#troubleshooting)
-11. [FAQ](#faq)
-12. [Contributing](#contributing)
+1. [TL;DR](#tldr)
+2. [What is Basher?](#what-is-basher)
+3. [How It Works](#how-it-works)
+4. [Prerequisites](#prerequisites)
+5. [Installation](#installation)
+6. [Quick Start Guide](#quick-start-guide)
+7. [Detailed Walkthrough](#detailed-walkthrough)
+8. [Configuration Options](#configuration-options)
+9. [CacheBash Integration](#cachebash-integration-optional)
+10. [Sharing with Teammates](#sharing-with-teammates)
+11. [Troubleshooting](#troubleshooting)
+12. [FAQ](#faq)
+13. [Contributing](#contributing)
 
 ---
 

@@ -21,7 +21,7 @@ Don't have these? See the [main README](../README.md#prerequisites) for installa
 Run this command in your terminal:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/feelgreatfoodie/basher-claude-code/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/feelgreatfoodie/basher/main/install.sh | bash
 ```
 
 Then add Basher to your PATH:
@@ -136,4 +136,5 @@ Watch the terminal to see progress, or come back later!
 
 - Read the [full README](../README.md) for detailed documentation
 - Check [Configuration Options](../README.md#configuration-options) to customize Basher
+- Set up [CacheBash Integration](../README.md#cachebash-integration-optional) for mobile monitoring
 - See [Troubleshooting](TROUBLESHOOTING.md) if you run into issues
