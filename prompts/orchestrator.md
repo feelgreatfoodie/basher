@@ -26,11 +26,16 @@ update_status({
 Update status as work progresses:
 ```
 update_status({
-  status: "Basher: US-001, US-002, US-003",  // Active stories
+  status: "Basher: 3/7 Wave 2 [US-004, US-005]",  // [completed]/[total] + active stories
   state: "working",
-  progress: [percentage complete]
+  progress: 43  // (completed/total) * 100
 })
 ```
+
+**Status format:** `Basher: [completed]/[total] Wave [N] [active stories]`
+- Shows overall progress across all stories
+- Indicates which wave is currently running
+- Lists active parallel stories
 
 ### When Blocked
 If you need a decision that affects multiple stories:
@@ -314,9 +319,38 @@ If more than 50% of a wave fails:
 
 ---
 
+## Sprint Completion Pause
+
+When all stories are complete, **do not immediately signal COMPLETE**. First, give the user a chance to add more scope:
+
+```
+ask_question({
+  question: "All stories complete!\n\n[list completed stories with IDs]\n\nAnything to add before finalizing?",
+  options: ["Looks good, finalize", "Add more scope", "Discuss when I'm back"],
+  priority: "normal",
+  context: "Sprint completion - all planned work done in parallel mode"
+})
+```
+
+Poll for response:
+```
+get_response({ questionId: "[returned id]" })
+```
+
+Handle the response:
+- **"Looks good, finalize"** → Proceed to final verification and signal COMPLETE
+- **"Add more scope"** → Ask follow-up for new task details, add to prd.json, spawn new subagents
+- **"Discuss when I'm back"** → Output `<basher>PAUSED</basher>` and exit
+
+**If no response after 30 minutes:**
+- Send one reminder: "Still waiting to finalize. Approve or add tasks?"
+- Continue polling indefinitely (don't auto-finalize)
+
+---
+
 ## Completion
 
-When all stories are complete:
+When all stories are complete and user has approved finalization:
 
 ### Final Verification (MANDATORY)
 

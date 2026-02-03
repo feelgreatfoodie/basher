@@ -15,10 +15,11 @@ Basher is an automation system that runs Claude Code (Anthropic's AI coding assi
 5. [Quick Start Guide](#quick-start-guide)
 6. [Detailed Walkthrough](#detailed-walkthrough)
 7. [Configuration Options](#configuration-options)
-8. [Sharing with Teammates](#sharing-with-teammates)
-9. [Troubleshooting](#troubleshooting)
-10. [FAQ](#faq)
-11. [Contributing](#contributing)
+8. [CacheBash Integration](#cachebash-integration-optional)
+9. [Sharing with Teammates](#sharing-with-teammates)
+10. [Troubleshooting](#troubleshooting)
+11. [FAQ](#faq)
+12. [Contributing](#contributing)
 
 ---
 
@@ -611,6 +612,105 @@ Basher automatically detects your project type and configures quality commands:
 | Python | `pyproject.toml` | `ruff check .` | `mypy .` | `pytest` | - |
 | Rust | `Cargo.toml` | `cargo clippy` | `cargo check` | `cargo test` | `cargo build` |
 | Go | `go.mod` | `golangci-lint run` | `go vet ./...` | `go test ./...` | `go build ./...` |
+
+---
+
+## CacheBash Integration (Optional)
+
+Basher can optionally integrate with [CacheBash](https://github.com/feelgreatfoodie/cachebash), a mobile companion app that lets you monitor and interact with Basher from your phone.
+
+### What is CacheBash?
+
+CacheBash is a mobile app that:
+- Shows real-time progress of your Basher runs
+- Sends push notifications when Basher needs input
+- Lets you answer questions and make decisions from anywhere
+- Allows you to send course corrections mid-run
+
+### What You'll See on Mobile
+
+When Basher runs with CacheBash enabled:
+
+| Event | Mobile Notification |
+|-------|---------------------|
+| Story starts | Status update: "Basher: 2/7 US-002 Adding login" |
+| Need decision | Push: "Need clarification: REST or GraphQL?" |
+| Error occurs | Push (high priority): "Build failed, how to proceed?" |
+| Sprint complete | Push: "All stories done! Anything to add?" |
+
+### Setting Up CacheBash
+
+1. **Install the CacheBash mobile app** (iOS/Android)
+   - Download from your app store or build from source
+
+2. **Get your API key**
+   - Open CacheBash app → Settings → Copy API Key
+
+3. **Add CacheBash MCP server to Claude Code**
+   ```bash
+   claude mcp add --transport http cachebash \
+     "https://cachebash-mcp-922749444863.us-central1.run.app/v1/mcp" \
+     --header "Authorization: Bearer YOUR_API_KEY"
+   ```
+
+4. **Restart Claude Code**
+   ```bash
+   claude  # MCP servers load at startup
+   ```
+
+5. **Verify connection**
+   ```bash
+   claude mcp list
+   # Should show: cachebash: ... (HTTP) - ✓ Connected
+   ```
+
+### Configuration
+
+CacheBash is enabled by default in `basher.config.json`:
+
+```json
+{
+  "cachebash": {
+    "enabled": true,
+    "pollIntervalSeconds": 30,
+    "sessionId": "optional-session-id"
+  }
+}
+```
+
+| Option | Description |
+|--------|-------------|
+| `enabled` | Turn CacheBash integration on/off |
+| `pollIntervalSeconds` | How often to check for responses (default: 30) |
+| `sessionId` | Optional fixed session ID for tracking across runs |
+
+### Responding to Questions
+
+When Basher asks a question:
+
+1. You'll receive a push notification on your phone
+2. Open the CacheBash app
+3. Select an option or type a custom response
+4. Basher receives your answer and continues
+
+### Sending Course Corrections
+
+To change direction mid-run:
+
+1. Open the CacheBash app
+2. Find your active session
+3. Send an interrupt message:
+   - "pause" or "stop" - Pauses Basher
+   - "skip US-XXX" - Skips a specific story
+   - Any other message - Treated as guidance
+
+### Running Without CacheBash
+
+If you don't want mobile integration:
+
+1. Set `"enabled": false` in `basher.config.json`
+2. Basher will run without mobile notifications
+3. Any blocking questions will cause Basher to pause until you check the terminal
 
 ---
 

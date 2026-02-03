@@ -29,6 +29,7 @@
   },
   "cachebash": {
     "enabled": true,
-    "pollIntervalSeconds": 30
+    "pollIntervalSeconds": 30,
+    "sessionId": null
   }
 }
