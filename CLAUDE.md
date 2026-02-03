@@ -6,6 +6,8 @@ Basher is an autonomous code generation system that uses Claude Code to implemen
 
 **New in v2:** CacheBash integration for mobile communication, parallel story execution, and smart error recovery.
 
+**New in v3:** Hybrid model architecture (Opus orchestrator + Sonnet subagents), continuous interrupt polling, dynamic sprint insertion, and enhanced Opus code review.
+
 ## Repository Structure
 
 ```
@@ -113,10 +115,29 @@ Template for subagent workers:
 - Reports back to orchestrator
 - Uses CacheBash directly for questions
 - Stages changes but does NOT commit
+- Aware that Opus will review code before commit
+
+## Continuous Interrupt Polling (v3)
+
+During parallel execution, the orchestrator polls for interrupts every 2 minutes (configurable via `interruptPollSeconds`). This allows:
+
+- **Immediate action** on interrupt-level tasks
+- **Dynamic sprint insertion** via `sprint` action level
+- **Course corrections** without waiting for wave completion
+
+### Task Action Levels
+
+| Action | Timing | Behavior |
+|--------|--------|----------|
+| `interrupt` | Immediate | Pause work, handle task now |
+| `sprint` | Current wave | Add to running sprint if no dependency conflicts |
+| `parallel` | Next available | Spawn subagent at next opportunity |
+| `queue` | After current | Handle when current work completes |
+| `backlog` | Eventually | Low priority, handle when idle |
 
 ## Configuration
 
-`basher.config.json` new options:
+`basher.config.json` options:
 
 ```json
 {
@@ -124,16 +145,34 @@ Template for subagent workers:
     "smartRecovery": true,
     "maxFixAttempts": 3
   },
+  "claude": {
+    "orchestratorModel": "opus",
+    "subagentModel": "sonnet",
+    "complexStoryModel": "opus",
+    "reviewWithOrchestrator": true
+  },
   "parallel": {
     "enabled": false,
     "maxConcurrent": 3
   },
   "cachebash": {
     "enabled": true,
-    "pollIntervalSeconds": 30
+    "pollIntervalSeconds": 30,
+    "interruptPollSeconds": 120
   }
 }
 ```
+
+### Hybrid Model Architecture (v3)
+
+| Setting | Default | Purpose |
+|---------|---------|---------|
+| `orchestratorModel` | opus | Model for the orchestrator (planning, review, coordination) |
+| `subagentModel` | sonnet | Model for standard story implementation |
+| `complexStoryModel` | opus | Model for high-complexity stories |
+| `reviewWithOrchestrator` | true | Opus reviews all subagent code before commit |
+
+**Cost optimization:** Sonnet handles ~80% of implementation work. Opus provides quality assurance through orchestration and code review.
 
 ## Skills (Slash Commands)
 
@@ -308,5 +347,21 @@ cd test-project
 3. Run: `claude mcp add --transport http cachebash "https://cachebash-mcp-922749444863.us-central1.run.app/v1/mcp" --header "Authorization: Bearer YOUR_KEY"`
 
 ---
+
+## Opus Code Review (v3)
+
+Before committing any subagent work, the Opus orchestrator performs a mandatory code review:
+
+1. **Read staged diff** - Examine actual code changes
+2. **Quality assessment** - Clean, idiomatic, minimal complexity
+3. **Acceptance criteria check** - All criteria satisfied
+4. **Integration check** - No conflicts with parallel work
+5. **Debug artifact check** - No console.log, TODO, etc.
+6. **Quality gates** - lint, typecheck, test pass
+
+Issues are handled by severity:
+- **Minor** - Orchestrator fixes directly
+- **Medium** - Spawn cleanup subagent
+- **Major** - Ask user via CacheBash
 
 *Last updated: 2026-02-02*

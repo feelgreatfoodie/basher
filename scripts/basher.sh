@@ -181,12 +181,19 @@ load_config() {
         GIT_BRANCH_PREFIX=$(json_get "$config_file" '.git.branchPrefix' '"branchPrefix"[[:space:]]*:[[:space:]]*"[^"]*"' "basher/")
         MAX_ITERATIONS_CONFIG=$(json_get "$config_file" '.iterations.max' '"max"[[:space:]]*:[[:space:]]*[0-9]*' "")
         DELAY_CONFIG=$(json_get "$config_file" '.iterations.delaySeconds' '"delaySeconds"[[:space:]]*:[[:space:]]*[0-9]*' "")
-        CLAUDE_MODEL=$(json_get "$config_file" '.claude.model' '"model"[[:space:]]*:[[:space:]]*"[^"]*"' "sonnet")
+        # Hybrid model config: separate models for orchestrator and subagents
+        ORCHESTRATOR_MODEL=$(json_get "$config_file" '.claude.orchestratorModel' '"orchestratorModel"[[:space:]]*:[[:space:]]*"[^"]*"' "opus")
+        SUBAGENT_MODEL=$(json_get "$config_file" '.claude.subagentModel' '"subagentModel"[[:space:]]*:[[:space:]]*"[^"]*"' "sonnet")
+        COMPLEX_STORY_MODEL=$(json_get "$config_file" '.claude.complexStoryModel' '"complexStoryModel"[[:space:]]*:[[:space:]]*"[^"]*"' "opus")
+        REVIEW_WITH_ORCHESTRATOR=$(json_get "$config_file" '.claude.reviewWithOrchestrator' '"reviewWithOrchestrator"[[:space:]]*:[[:space:]]*true' "true")
+        # Legacy fallback for single model config
+        CLAUDE_MODEL=$(json_get "$config_file" '.claude.model' '"model"[[:space:]]*:[[:space:]]*"[^"]*"' "")
 
         # New config options
         PARALLEL_ENABLED=$(json_get "$config_file" '.parallel.enabled' '"enabled"[[:space:]]*:[[:space:]]*true' "false")
         MAX_CONCURRENT=$(json_get "$config_file" '.parallel.maxConcurrent' '"maxConcurrent"[[:space:]]*:[[:space:]]*[0-9]*' "3")
         CACHEBASH_ENABLED=$(json_get "$config_file" '.cachebash.enabled' '"enabled"[[:space:]]*:[[:space:]]*true' "true")
+        INTERRUPT_POLL_SECONDS=$(json_get "$config_file" '.cachebash.interruptPollSeconds' '"interruptPollSeconds"[[:space:]]*:[[:space:]]*[0-9]*' "120")
 
         # Apply config values
         [[ -n "$MAX_ITERATIONS_CONFIG" ]] && MAX_ITERATIONS="$MAX_ITERATIONS_CONFIG"
@@ -201,8 +208,13 @@ load_config() {
         GIT_STRATEGY="single-branch"
         GIT_BASE_BRANCH="main"
         GIT_BRANCH_PREFIX="basher/"
-        CLAUDE_MODEL="sonnet"
+        ORCHESTRATOR_MODEL="opus"
+        SUBAGENT_MODEL="sonnet"
+        COMPLEX_STORY_MODEL="opus"
+        REVIEW_WITH_ORCHESTRATOR="true"
+        CLAUDE_MODEL=""
         CACHEBASH_ENABLED="true"
+        INTERRUPT_POLL_SECONDS="120"
     fi
 }
 
@@ -406,14 +418,17 @@ run_claude_sequential() {
         exit 1
     fi
 
+    # Use legacy model if set, otherwise orchestrator model (sequential uses same model throughout)
+    local model_to_use="${CLAUDE_MODEL:-$ORCHESTRATOR_MODEL}"
+
     log_info "Running Claude (sequential mode) with:"
     log_info "  Prompt: $prompt_file"
     log_info "  PRD: $prd_file"
-    log_info "  Model: $CLAUDE_MODEL"
+    log_info "  Model: $model_to_use"
 
     local claude_cmd="claude"
 
-    if [[ "$CLAUDE_MODEL" == "opus" ]]; then
+    if [[ "$model_to_use" == "opus" ]]; then
         claude_cmd="$claude_cmd --model claude-opus-4-5-20251101"
     fi
 
@@ -463,15 +478,20 @@ run_claude_parallel() {
         exit 1
     fi
 
+    # Orchestrator always uses orchestrator model (defaults to opus)
+    local orchestrator_model="${CLAUDE_MODEL:-$ORCHESTRATOR_MODEL}"
+
     log_info "Running Claude (parallel/orchestrator mode) with:"
     log_info "  Prompt: $prompt_file"
     log_info "  PRD: $prd_file"
-    log_info "  Model: $CLAUDE_MODEL"
+    log_info "  Orchestrator model: $orchestrator_model"
+    log_info "  Subagent model: $SUBAGENT_MODEL"
+    log_info "  Complex story model: $COMPLEX_STORY_MODEL"
     log_info "  Max concurrent: $MAX_CONCURRENT"
 
     local claude_cmd="claude"
 
-    if [[ "$CLAUDE_MODEL" == "opus" ]]; then
+    if [[ "$orchestrator_model" == "opus" ]]; then
         claude_cmd="$claude_cmd --model claude-opus-4-5-20251101"
     fi
 

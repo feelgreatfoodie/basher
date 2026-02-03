@@ -21,7 +21,10 @@
     "delaySeconds": 2
   },
   "claude": {
-    "model": "sonnet"
+    "orchestratorModel": "opus",
+    "subagentModel": "sonnet",
+    "complexStoryModel": "opus",
+    "reviewWithOrchestrator": true
   },
   "parallel": {
     "enabled": false,
@@ -30,6 +33,7 @@
   "cachebash": {
     "enabled": true,
     "pollIntervalSeconds": 30,
+    "interruptPollSeconds": 120,
     "sessionId": null
   }
 }
