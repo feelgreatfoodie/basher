@@ -84,6 +84,32 @@ If all stories have `passes: true`:
 <basher>COMPLETE</basher>
 ```
 
+### Phase 1.5: Check for Interrupts
+
+Before planning execution, check if the user has sent any messages:
+
+```
+get_interrupts({ sessionId: "[from basher.config.json or generate one]", markAsRead: true })
+```
+
+Handle interrupt messages:
+- **"stop" / "pause" / "wait"** → Output `<basher>PAUSED</basher>` and exit
+- **"skip US-XXX"** → Remove that story from the execution plan
+- **Course corrections** → Adjust approach, update progress.txt
+
+Also check for new tasks from mobile:
+```
+get_pending_tasks({ status: "pending" })
+```
+
+Handle by action level:
+- **interrupt** → Handle immediately before starting waves
+- **parallel** → Add to current wave if independent, spawn additional subagent
+- **queue** → Add to end of execution plan
+- **backlog** → Note but deprioritize
+
+**Check interrupts between waves too** - After each wave completes, check again before starting the next wave.
+
 ### Phase 2: Plan Execution
 
 Group stories into waves based on dependencies:
@@ -102,6 +128,23 @@ Wave 3: [US-006]                   # Depends on US-004
 **Parallel Limits:**
 - Maximum 3 concurrent subagents
 - If a wave has more than 3 stories, batch them
+
+### Dynamic Slot Management (v2.0)
+
+Instead of waiting for an entire wave to complete, use **slot-based parallelism**:
+
+1. Maintain 3 active slots (configurable via `maxConcurrent`)
+2. When a subagent completes, immediately fill the slot with the next eligible story
+3. A story is eligible when all its dependencies have `passes: true`
+
+**Example flow:**
+```
+Slot 1: US-001 ████████ done → US-004 (was waiting on US-001) ████████ done
+Slot 2: US-002 ████████████████ done → US-005 ████████ done
+Slot 3: US-003 ████ done → US-006 ████████████ done
+```
+
+This maximizes throughput by never leaving slots idle.
 
 ### Phase 3: Execute Waves
 
@@ -276,6 +319,32 @@ Even without explicit dependencies, consider:
 
 When in doubt, run sequentially or ask via CacheBash.
 
+### Conflict Detection (v2.0)
+
+Before committing subagent work, check for file conflicts:
+
+```bash
+# Get files modified by each subagent from their results
+# Check if any files appear in multiple results
+```
+
+**If conflicts detected:**
+
+1. **Same file, different sections** → May be safe to merge
+   - Review the changes manually
+   - Use `git diff` to verify no overlapping edits
+
+2. **Same file, overlapping sections** → Conflict!
+   - Pick the subagent with higher priority story
+   - Re-run the other subagent after the first commits
+   - Or ask user via CacheBash which to keep
+
+3. **Semantic conflicts** (e.g., both add same function name)
+   - Spawn a "conflict resolution" subagent
+   - Or ask user for guidance
+
+**Prevention:** When planning waves, group stories that touch the same files into the same wave but run them sequentially within that wave.
+
 ---
 
 ## Error Recovery
@@ -316,6 +385,37 @@ If more than 50% of a wave fails:
 1. Stop spawning new subagents
 2. Ask user whether to continue with remaining stories
 3. Document state in progress.txt
+
+### Error Aggregation (v2.0)
+
+When multiple subagents fail, consolidate errors into a single notification:
+
+```
+ask_question({
+  question: "Multiple stories failed:\n\n" +
+    "- US-002: Build error in auth.ts\n" +
+    "- US-004: Test timeout\n" +
+    "- US-005: Type error in utils.ts\n\n" +
+    "How to proceed?",
+  options: ["Retry all failed", "Skip and continue", "Stop and review", "Show details"],
+  priority: "high",
+  context: "3 of 5 stories in Wave 2 failed. 2 succeeded and are ready to commit."
+})
+```
+
+**Don't spam the user** with individual failure notifications. Batch them:
+- Wait for all subagents in current batch to complete
+- Aggregate successes and failures
+- Send one consolidated notification
+
+**Error categorization:**
+| Error Type | Action |
+|------------|--------|
+| Build/compile error | Likely fixable, offer retry |
+| Test failure | May need user input on expected behavior |
+| Timeout | Transient, auto-retry once |
+| Conflict | Needs user decision |
+| Unknown | Show full error, ask for guidance |
 
 ---
 

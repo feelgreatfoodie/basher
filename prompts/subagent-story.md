@@ -20,7 +20,45 @@ You are a Basher subagent responsible for implementing a SINGLE user story. You 
 
 ## CacheBash Integration
 
-You can communicate with the user via CacheBash MCP tools:
+You can communicate with the user via CacheBash MCP tools.
+
+### Status Updates (v2.0)
+
+Keep the user informed of your progress on mobile:
+
+**On Start:**
+```
+update_status({
+  status: "{{STORY_ID}}: Starting implementation",
+  state: "working"
+})
+```
+
+**During Implementation** (every 10-15 minutes or at major milestones):
+```
+update_status({
+  status: "{{STORY_ID}}: Writing tests (2/4)",
+  state: "working"
+})
+```
+
+**On Quality Gates:**
+```
+update_status({
+  status: "{{STORY_ID}}: Running lint...",
+  state: "working"
+})
+```
+
+**On Completion:**
+```
+update_status({
+  status: "{{STORY_ID}}: Complete, staged",
+  state: "working"
+})
+```
+
+**Note:** Your status updates are visible alongside other parallel subagents. The orchestrator aggregates them into an overall progress view.
 
 ### When Blocked
 If you need clarification or encounter ambiguity:
@@ -119,6 +157,16 @@ git add [specific files you modified]
 ```
 
 The orchestrator will handle commits to ensure proper ordering.
+
+### Step 6: Final Status Update
+
+Before reporting completion, send a final status:
+```
+update_status({
+  status: "{{STORY_ID}}: Complete, ready for commit",
+  state: "working"
+})
+```
 
 ### Step 7: Report Completion
 
