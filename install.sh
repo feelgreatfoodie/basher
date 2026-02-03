@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 #
-# Ralph for Claude Code - Installation Script
+# Basher for Claude Code - Installation Script
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/feelgreatfoodie/ralph-claude-code/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/feelgreatfoodie/basher/main/install.sh | bash
 #
 #   Or clone the repo and run:
 #   ./install.sh
 #
-# This script installs Ralph to ~/.ralph/
+# This script installs Basher to ~/.basher/
 #
 
 set -euo pipefail
@@ -22,11 +22,11 @@ CYAN='\033[0;36m'
 BOLD='\033[1m'
 NC='\033[0m' # No Color
 
-RALPH_HOME="${RALPH_HOME:-$HOME/.ralph}"
+BASHER_HOME="${BASHER_HOME:-$HOME/.basher}"
 
 # Detect if we're running from a cloned repo or via curl
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-if [[ -f "$SCRIPT_DIR/scripts/ralph.sh" ]]; then
+if [[ -f "$SCRIPT_DIR/scripts/basher.sh" ]]; then
     SOURCE_DIR="$SCRIPT_DIR"
     INSTALL_MODE="local"
 else
@@ -42,7 +42,7 @@ print_banner() {
     echo ""
     echo -e "${CYAN}╔══════════════════════════════════════════════════════════════╗${NC}"
     echo -e "${CYAN}║                                                              ║${NC}"
-    echo -e "${CYAN}║         ${BOLD}Ralph for Claude Code${NC}${CYAN} - Installer                   ║${NC}"
+    echo -e "${CYAN}║         ${BOLD}Basher for Claude Code${NC}${CYAN} - Installer                  ║${NC}"
     echo -e "${CYAN}║                                                              ║${NC}"
     echo -e "${CYAN}║         Autonomous AI Agent Loop for Building Apps           ║${NC}"
     echo -e "${CYAN}║                                                              ║${NC}"
@@ -93,7 +93,7 @@ check_prerequisites() {
     else
         log_warn "Claude Code CLI not found in PATH"
         echo ""
-        echo -e "       ${YELLOW}Ralph requires Claude Code CLI to run.${NC}"
+        echo -e "       ${YELLOW}Basher requires Claude Code CLI to run.${NC}"
         echo "       Install from: https://claude.ai/download"
         echo "       After installing, run: claude auth login"
         echo ""
@@ -121,93 +121,93 @@ check_prerequisites() {
 # ============================================================================
 
 backup_existing() {
-    if [[ -d "$RALPH_HOME" ]]; then
+    if [[ -d "$BASHER_HOME" ]]; then
         log_step "Found existing installation, creating backup..."
-        local backup_dir="$RALPH_HOME.backup-$(date +%Y%m%d-%H%M%S)"
-        mv "$RALPH_HOME" "$backup_dir"
+        local backup_dir="$BASHER_HOME.backup-$(date +%Y%m%d-%H%M%S)"
+        mv "$BASHER_HOME" "$backup_dir"
         log_success "Backup created at: $backup_dir"
     fi
 }
 
 create_directories() {
     log_step "Creating directory structure..."
-    mkdir -p "$RALPH_HOME"/{scripts,skills/prd,skills/ralph-convert,templates,lib,archive,prompts}
+    mkdir -p "$BASHER_HOME"/{scripts,skills/prd,skills/basher-convert,templates,lib,archive,prompts}
 }
 
 install_from_local() {
     log_step "Installing from local repository..."
 
     # Copy scripts
-    cp "$SOURCE_DIR/scripts/ralph.sh" "$RALPH_HOME/"
-    cp "$SOURCE_DIR/scripts/ralph-init.sh" "$RALPH_HOME/"
-    cp "$SOURCE_DIR/scripts/package.sh" "$RALPH_HOME/"
+    cp "$SOURCE_DIR/scripts/basher.sh" "$BASHER_HOME/"
+    cp "$SOURCE_DIR/scripts/basher-init.sh" "$BASHER_HOME/"
+    cp "$SOURCE_DIR/scripts/package.sh" "$BASHER_HOME/"
 
     # Copy prompt
-    cp "$SOURCE_DIR/prompt.md" "$RALPH_HOME/"
+    cp "$SOURCE_DIR/prompt.md" "$BASHER_HOME/"
 
     # Copy prompts (orchestrator and subagent)
-    cp "$SOURCE_DIR/prompts/"*.md "$RALPH_HOME/prompts/"
+    cp "$SOURCE_DIR/prompts/"*.md "$BASHER_HOME/prompts/"
 
     # Copy lib
-    cp "$SOURCE_DIR/lib/detect-stack.sh" "$RALPH_HOME/lib/"
+    cp "$SOURCE_DIR/lib/detect-stack.sh" "$BASHER_HOME/lib/"
 
     # Copy skills
-    cp "$SOURCE_DIR/skills/prd/prompt.md" "$RALPH_HOME/skills/prd/"
-    cp "$SOURCE_DIR/skills/ralph-convert/prompt.md" "$RALPH_HOME/skills/ralph-convert/"
+    cp "$SOURCE_DIR/skills/prd/prompt.md" "$BASHER_HOME/skills/prd/"
+    cp "$SOURCE_DIR/skills/basher-convert/prompt.md" "$BASHER_HOME/skills/basher-convert/"
 
     # Copy templates
-    cp "$SOURCE_DIR/templates/"* "$RALPH_HOME/templates/"
+    cp "$SOURCE_DIR/templates/"* "$BASHER_HOME/templates/"
 
     # Initialize global learnings file if it doesn't exist
-    if [[ ! -f "$RALPH_HOME/learnings.md" ]]; then
-        cp "$RALPH_HOME/templates/learnings.md" "$RALPH_HOME/learnings.md"
+    if [[ ! -f "$BASHER_HOME/learnings.md" ]]; then
+        cp "$BASHER_HOME/templates/learnings.md" "$BASHER_HOME/learnings.md"
         log_step "Initialized global learnings file"
     fi
 }
 
 install_from_remote() {
-    log_step "Downloading Ralph from GitHub..."
+    log_step "Downloading Basher from GitHub..."
 
-    local BASE_URL="https://raw.githubusercontent.com/feelgreatfoodie/ralph-claude-code/main"
+    local BASE_URL="https://raw.githubusercontent.com/feelgreatfoodie/basher/main"
 
     # Download scripts
-    curl -fsSL "$BASE_URL/scripts/ralph.sh" -o "$RALPH_HOME/ralph.sh"
-    curl -fsSL "$BASE_URL/scripts/ralph-init.sh" -o "$RALPH_HOME/ralph-init.sh"
-    curl -fsSL "$BASE_URL/scripts/package.sh" -o "$RALPH_HOME/package.sh"
+    curl -fsSL "$BASE_URL/scripts/basher.sh" -o "$BASHER_HOME/basher.sh"
+    curl -fsSL "$BASE_URL/scripts/basher-init.sh" -o "$BASHER_HOME/basher-init.sh"
+    curl -fsSL "$BASE_URL/scripts/package.sh" -o "$BASHER_HOME/package.sh"
 
     # Download prompt
-    curl -fsSL "$BASE_URL/prompt.md" -o "$RALPH_HOME/prompt.md"
+    curl -fsSL "$BASE_URL/prompt.md" -o "$BASHER_HOME/prompt.md"
 
     # Download prompts (orchestrator and subagent for parallel mode)
-    curl -fsSL "$BASE_URL/prompts/orchestrator.md" -o "$RALPH_HOME/prompts/orchestrator.md"
-    curl -fsSL "$BASE_URL/prompts/subagent-story.md" -o "$RALPH_HOME/prompts/subagent-story.md"
+    curl -fsSL "$BASE_URL/prompts/orchestrator.md" -o "$BASHER_HOME/prompts/orchestrator.md"
+    curl -fsSL "$BASE_URL/prompts/subagent-story.md" -o "$BASHER_HOME/prompts/subagent-story.md"
 
     # Download lib
-    curl -fsSL "$BASE_URL/lib/detect-stack.sh" -o "$RALPH_HOME/lib/detect-stack.sh"
+    curl -fsSL "$BASE_URL/lib/detect-stack.sh" -o "$BASHER_HOME/lib/detect-stack.sh"
 
     # Download skills
-    curl -fsSL "$BASE_URL/skills/prd/prompt.md" -o "$RALPH_HOME/skills/prd/prompt.md"
-    curl -fsSL "$BASE_URL/skills/ralph-convert/prompt.md" -o "$RALPH_HOME/skills/ralph-convert/prompt.md"
+    curl -fsSL "$BASE_URL/skills/prd/prompt.md" -o "$BASHER_HOME/skills/prd/prompt.md"
+    curl -fsSL "$BASE_URL/skills/basher-convert/prompt.md" -o "$BASHER_HOME/skills/basher-convert/prompt.md"
 
     # Download templates
-    curl -fsSL "$BASE_URL/templates/ralph.config.json" -o "$RALPH_HOME/templates/ralph.config.json"
-    curl -fsSL "$BASE_URL/templates/prd.json.example" -o "$RALPH_HOME/templates/prd.json.example"
-    curl -fsSL "$BASE_URL/templates/prd.md.example" -o "$RALPH_HOME/templates/prd.md.example"
-    curl -fsSL "$BASE_URL/templates/transcript.example.txt" -o "$RALPH_HOME/templates/transcript.example.txt"
-    curl -fsSL "$BASE_URL/templates/learnings.md" -o "$RALPH_HOME/templates/learnings.md"
+    curl -fsSL "$BASE_URL/templates/basher.config.json" -o "$BASHER_HOME/templates/basher.config.json"
+    curl -fsSL "$BASE_URL/templates/prd.json.example" -o "$BASHER_HOME/templates/prd.json.example"
+    curl -fsSL "$BASE_URL/templates/prd.md.example" -o "$BASHER_HOME/templates/prd.md.example"
+    curl -fsSL "$BASE_URL/templates/transcript.example.txt" -o "$BASHER_HOME/templates/transcript.example.txt"
+    curl -fsSL "$BASE_URL/templates/learnings.md" -o "$BASHER_HOME/templates/learnings.md"
 
     # Initialize global learnings file if it doesn't exist
-    if [[ ! -f "$RALPH_HOME/learnings.md" ]]; then
-        cp "$RALPH_HOME/templates/learnings.md" "$RALPH_HOME/learnings.md"
+    if [[ ! -f "$BASHER_HOME/learnings.md" ]]; then
+        cp "$BASHER_HOME/templates/learnings.md" "$BASHER_HOME/learnings.md"
     fi
 }
 
 set_permissions() {
     log_step "Setting executable permissions..."
-    chmod +x "$RALPH_HOME/ralph.sh"
-    chmod +x "$RALPH_HOME/ralph-init.sh"
-    chmod +x "$RALPH_HOME/package.sh"
-    chmod +x "$RALPH_HOME/lib/detect-stack.sh"
+    chmod +x "$BASHER_HOME/basher.sh"
+    chmod +x "$BASHER_HOME/basher-init.sh"
+    chmod +x "$BASHER_HOME/package.sh"
+    chmod +x "$BASHER_HOME/lib/detect-stack.sh"
 }
 
 detect_shell() {
@@ -237,16 +237,16 @@ print_success() {
     echo -e "${GREEN}║                                                              ║${NC}"
     echo -e "${GREEN}╚══════════════════════════════════════════════════════════════╝${NC}"
     echo ""
-    echo -e "${BOLD}Ralph is installed at:${NC} $RALPH_HOME"
+    echo -e "${BOLD}Basher is installed at:${NC} $BASHER_HOME"
     echo ""
     echo -e "${BOLD}${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo -e "${BOLD}NEXT STEPS${NC}"
     echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo ""
-    echo -e "${BOLD}1. Add Ralph to your PATH${NC} (recommended)"
+    echo -e "${BOLD}1. Add Basher to your PATH${NC} (recommended)"
     echo ""
     echo "   Run this command:"
-    echo -e "   ${CYAN}echo 'export PATH=\"\$HOME/.ralph:\$PATH\"' >> $rc_file${NC}"
+    echo -e "   ${CYAN}echo 'export PATH=\"\$HOME/.basher:\$PATH\"' >> $rc_file${NC}"
     echo ""
     echo "   Then reload your shell:"
     echo -e "   ${CYAN}source $rc_file${NC}"
@@ -258,10 +258,10 @@ print_success() {
     echo ""
     echo "   If not installed, get it from: https://claude.ai/download"
     echo ""
-    echo -e "${BOLD}3. Initialize Ralph in a project${NC}"
+    echo -e "${BOLD}3. Initialize Basher in a project${NC}"
     echo ""
     echo "   Navigate to your project and run:"
-    echo -e "   ${CYAN}~/.ralph/ralph-init.sh${NC}"
+    echo -e "   ${CYAN}~/.basher/basher-init.sh${NC}"
     echo ""
     echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo -e "${BOLD}QUICK START${NC}"
@@ -269,17 +269,17 @@ print_success() {
     echo ""
     echo "   mkdir my-project && cd my-project"
     echo "   git init"
-    echo "   ~/.ralph/ralph-init.sh"
-    echo "   # Edit ./ralph/transcript.txt with your feature description"
+    echo "   ~/.basher/basher-init.sh"
+    echo "   # Edit ./basher/transcript.txt with your feature description"
     echo "   claude   # then type: /prd"
-    echo "   # Review ./ralph/prd.md"
-    echo "   claude   # then type: /ralph-convert"
-    echo "   ~/.ralph/ralph.sh"
+    echo "   # Review ./basher/prd.md"
+    echo "   claude   # then type: /basher-convert"
+    echo "   ~/.basher/basher.sh"
     echo ""
     echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo ""
-    echo "For detailed documentation, see: $RALPH_HOME/README.md"
-    echo "Or visit: https://github.com/feelgreatfoodie/ralph-claude-code"
+    echo "For detailed documentation, see: $BASHER_HOME/README.md"
+    echo "Or visit: https://github.com/feelgreatfoodie/basher"
     echo ""
 }
 

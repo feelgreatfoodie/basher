@@ -1,6 +1,6 @@
 # Example Meeting Transcript
 
-This is an example of meeting notes that can be converted into a PRD using Ralph.
+This is an example of meeting notes that can be converted into a PRD using Basher.
 
 ---
 
@@ -56,7 +56,7 @@ This is an example of meeting notes that can be converted into a PRD using Ralph
 
 **Alice:** Great. What branch should we use?
 
-**Bob:** Let's use `ralph/task-manager-api`.
+**Bob:** Let's use `basher/task-manager-api`.
 
 **Alice:** Perfect. Let's do this!
 

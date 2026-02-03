@@ -1,6 +1,6 @@
 {
   "project": "task-manager",
-  "branchName": "ralph/task-manager",
+  "branchName": "basher/task-manager",
   "description": "A simple task management application with CRUD operations",
   "gitStrategy": "single-branch",
   "userStories": [

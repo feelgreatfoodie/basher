@@ -1,6 +1,6 @@
-# Ralph Subagent: Story Implementation
+# Basher Subagent: Story Implementation
 
-You are a Ralph subagent responsible for implementing a SINGLE user story. You were spawned by the Ralph orchestrator to work on this story in parallel with other subagents.
+You are a Basher subagent responsible for implementing a SINGLE user story. You were spawned by the Basher orchestrator to work on this story in parallel with other subagents.
 
 ## Your Assignment
 
@@ -57,9 +57,9 @@ ask_question({
 
 Read these files:
 ```
-./ralph/progress.txt    # Learnings from previous work in this run
+./basher/progress.txt    # Learnings from previous work in this run
 ./CLAUDE.md             # Project-level codebase patterns
-~/.ralph/learnings.md   # Global cross-project learnings (if exists)
+~/.basher/learnings.md   # Global cross-project learnings (if exists)
 ```
 
 **Check global learnings** for relevant framework patterns or gotchas that apply to this story.

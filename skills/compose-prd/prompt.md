@@ -15,15 +15,15 @@ Assemble a complete PRD from selected domain fragments in the saas-blueprint.
 
 ## Purpose
 
-Creates a complete, Ralph-compatible PRD by:
+Creates a complete, Basher-compatible PRD by:
 1. Reading prd-fragment.md from each specified domain
 2. Merging user stories with sequential numbering
 3. Calculating combined effort estimates
-4. Generating a unified PRD ready for `/ralph-convert`
+4. Generating a unified PRD ready for `/basher-convert`
 
 ## Output
 
-Generates `./ralph/prd.md` with:
+Generates `./basher/prd.md` with:
 - Project overview synthesized from selected domains
 - All user stories renumbered sequentially (US-001, US-002, ...)
 - Combined technical considerations
@@ -93,7 +93,7 @@ Total:            38-56 hours
 
 ### Step 5: Generate PRD
 
-Create `./ralph/prd.md`:
+Create `./basher/prd.md`:
 
 ```markdown
 # Project PRD
@@ -164,14 +164,14 @@ graph TD
 | API | 10 | 18 | 26 |
 | **Total** | **19** | **38** | **56** |
 
-## Ready for Ralph
+## Ready for Basher
 
 This PRD is ready for conversion with:
 ```
-/ralph-convert
+/basher-convert
 ```
 
-This will generate `./ralph/stories.json` for autonomous execution.
+This will generate `./basher/stories.json` for autonomous execution.
 ```
 
 ### Step 6: Output Summary
@@ -183,13 +183,13 @@ Domains: auth, database, api
 User Stories: 19
 Total Estimate: 38-56 hours
 
-Output: ./ralph/prd.md
+Output: ./basher/prd.md
 
 Next Steps:
 1. Review the generated PRD
 2. Adjust scope or estimates as needed
-3. Run /ralph-convert to generate stories.json
-4. Execute with ralph.sh
+3. Run /basher-convert to generate stories.json
+4. Execute with basher.sh
 ```
 
 ## Domain Ordering
@@ -264,19 +264,19 @@ Warning: US-AUTH-003 missing acceptance criteria.
 Adding placeholder: "- [ ] Define acceptance criteria"
 ```
 
-## Integration with Ralph
+## Integration with Basher
 
-The generated PRD is designed to work seamlessly with Ralph:
+The generated PRD is designed to work seamlessly with Basher:
 
 1. **Story Sizing**: Each story is 2-8 hours (fits single Claude session)
 2. **Clear AC**: Acceptance criteria enable automated verification
 3. **Technical Notes**: Help Claude understand implementation approach
-4. **Dependencies**: Allow Ralph to order execution correctly
+4. **Dependencies**: Allow Basher to order execution correctly
 
 After composing:
 ```bash
-/ralph-convert         # Generates stories.json
-./ralph/ralph.sh      # Starts autonomous execution
+/basher-convert         # Generates stories.json
+./basher/basher.sh      # Starts autonomous execution
 ```
 
 ## Example Output
@@ -336,7 +336,7 @@ is stored in Firestore with comprehensive security rules.
 
 ## Notes
 
-- Always generate into `./ralph/prd.md` for consistency
+- Always generate into `./basher/prd.md` for consistency
 - Include domain tags in technical notes for traceability
 - Preserve original story IDs in comments for reference
 - Consider dependencies when ordering stories

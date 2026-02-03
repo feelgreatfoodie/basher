@@ -9,7 +9,7 @@ You will receive one of:
 - Rough notes or bullet points about a feature
 - A high-level feature description
 
-Look for a file in the current directory or `./ralph/` directory named:
+Look for a file in the current directory or `./basher/` directory named:
 - `transcript.txt` or `transcript.md`
 - `notes.txt` or `notes.md`
 - `input.txt` or `input.md`
@@ -18,7 +18,7 @@ If no input file is found, ask the user to provide the feature description or me
 
 ## Output
 
-Generate a PRD in Markdown format and save it to `./ralph/prd.md`.
+Generate a PRD in Markdown format and save it to `./basher/prd.md`.
 
 ## PRD Structure
 
@@ -76,7 +76,7 @@ As a [user type], I want to [action] so that [benefit].
 [Unresolved questions that need answers]
 
 ## Git Branch
-**Branch Name:** `ralph/[feature-name]`
+**Branch Name:** `basher/[feature-name]`
 ```
 
 ## Story Sizing Guidelines
@@ -148,15 +148,15 @@ When processing meeting transcripts:
 
 After creating the PRD:
 
-1. Save to `./ralph/prd.md`
+1. Save to `./basher/prd.md`
 2. Inform the user the PRD is ready for review
-3. Suggest running `/ralph-convert` to generate the JSON format
+3. Suggest running `/basher-convert` to generate the JSON format
 4. Ask if they want to modify any stories or priorities
 
 ## Example Output Message
 
 ```
-PRD generated and saved to ./ralph/prd.md
+PRD generated and saved to ./basher/prd.md
 
 Summary:
 - Project: [Name]
@@ -168,6 +168,6 @@ Summary:
 
 Next steps:
 1. Review the PRD and make any adjustments
-2. Run /ralph-convert to generate prd.json
-3. Run ./ralph.sh to start autonomous implementation
+2. Run /basher-convert to generate prd.json
+3. Run ./basher.sh to start autonomous implementation
 ```

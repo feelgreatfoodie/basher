@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #
-# Ralph for Claude Code - Autonomous AI Agent Loop
+# Basher for Claude Code - Autonomous AI Agent Loop
 #
-# Usage: ralph.sh [OPTIONS] [max_iterations]
+# Usage: basher.sh [OPTIONS] [max_iterations]
 #
 # This script orchestrates Claude Code CLI invocations to complete
 # all user stories in a PRD. Supports both sequential (one story at a time)
@@ -17,9 +17,9 @@ set -euo pipefail
 
 show_help() {
     cat << 'EOF'
-Ralph for Claude Code - Autonomous AI Agent Loop
+Basher for Claude Code - Autonomous AI Agent Loop
 
-Usage: ralph.sh [OPTIONS] [max_iterations]
+Usage: basher.sh [OPTIONS] [max_iterations]
 
 Arguments:
   max_iterations    Maximum number of iterations before stopping (default: 20)
@@ -38,18 +38,18 @@ Description:
   Parallel mode: Orchestrator analyzes dependencies and spawns subagents.
 
 Prerequisites:
-  - prd.json must exist in ./ralph/ or ~/.ralph/
+  - prd.json must exist in ./basher/ or ~/.basher/
   - Claude Code CLI must be installed and authenticated
   - Must be run from within a git repository
   - CacheBash MCP server should be configured (for status updates)
 
 Examples:
-  ralph.sh              # Run sequentially with default 20 iterations
-  ralph.sh --parallel   # Run with orchestrator and parallel subagents
-  ralph.sh 50           # Run with up to 50 iterations
-  ralph.sh --help       # Show this help message
+  basher.sh              # Run sequentially with default 20 iterations
+  basher.sh --parallel   # Run with orchestrator and parallel subagents
+  basher.sh 50           # Run with up to 50 iterations
+  basher.sh --help       # Show this help message
 
-For more information, see: https://github.com/anthropics/ralph-claude-code
+For more information, see: https://github.com/feelgreatfoodie/basher
 EOF
     exit 0
 }
@@ -58,8 +58,8 @@ EOF
 # Configuration
 # ============================================================================
 
-RALPH_GLOBAL_DIR="${RALPH_HOME:-$HOME/.ralph}"
-RALPH_LOCAL_DIR="./ralph"
+BASHER_GLOBAL_DIR="${BASHER_HOME:-$HOME/.basher}"
+BASHER_LOCAL_DIR="./basher"
 MAX_ITERATIONS="${1:-20}"
 DELAY_SECONDS=2
 EXECUTION_MODE="sequential"  # or "parallel"
@@ -110,34 +110,34 @@ parse_args() {
 # ============================================================================
 
 log_info() {
-    echo -e "${BLUE}[ralph]${NC} $1"
+    echo -e "${BLUE}[basher]${NC} $1"
 }
 
 log_success() {
-    echo -e "${GREEN}[ralph]${NC} $1"
+    echo -e "${GREEN}[basher]${NC} $1"
 }
 
 log_warn() {
-    echo -e "${YELLOW}[ralph]${NC} $1"
+    echo -e "${YELLOW}[basher]${NC} $1"
 }
 
 log_error() {
-    echo -e "${RED}[ralph]${NC} $1"
+    echo -e "${RED}[basher]${NC} $1"
 }
 
 log_iteration() {
-    echo -e "${CYAN}[ralph]${NC} ══════════════════════════════════════════════════════════"
-    echo -e "${CYAN}[ralph]${NC} ITERATION $1 / $MAX_ITERATIONS"
-    echo -e "${CYAN}[ralph]${NC} ══════════════════════════════════════════════════════════"
+    echo -e "${CYAN}[basher]${NC} ══════════════════════════════════════════════════════════"
+    echo -e "${CYAN}[basher]${NC} ITERATION $1 / $MAX_ITERATIONS"
+    echo -e "${CYAN}[basher]${NC} ══════════════════════════════════════════════════════════"
 }
 
 # Find a file, preferring local over global
 find_file() {
     local filename="$1"
-    if [[ -f "$RALPH_LOCAL_DIR/$filename" ]]; then
-        echo "$RALPH_LOCAL_DIR/$filename"
-    elif [[ -f "$RALPH_GLOBAL_DIR/$filename" ]]; then
-        echo "$RALPH_GLOBAL_DIR/$filename"
+    if [[ -f "$BASHER_LOCAL_DIR/$filename" ]]; then
+        echo "$BASHER_LOCAL_DIR/$filename"
+    elif [[ -f "$BASHER_GLOBAL_DIR/$filename" ]]; then
+        echo "$BASHER_GLOBAL_DIR/$filename"
     else
         echo ""
     fi
@@ -171,14 +171,14 @@ json_get() {
 # Load configuration with local override
 load_config() {
     local config_file
-    config_file=$(find_file "ralph.config.json")
+    config_file=$(find_file "basher.config.json")
 
     if [[ -n "$config_file" ]]; then
         log_info "Loading config from: $config_file"
 
         GIT_STRATEGY=$(json_get "$config_file" '.git.strategy' '"strategy"[[:space:]]*:[[:space:]]*"[^"]*"' "single-branch")
         GIT_BASE_BRANCH=$(json_get "$config_file" '.git.baseBranch' '"baseBranch"[[:space:]]*:[[:space:]]*"[^"]*"' "main")
-        GIT_BRANCH_PREFIX=$(json_get "$config_file" '.git.branchPrefix' '"branchPrefix"[[:space:]]*:[[:space:]]*"[^"]*"' "ralph/")
+        GIT_BRANCH_PREFIX=$(json_get "$config_file" '.git.branchPrefix' '"branchPrefix"[[:space:]]*:[[:space:]]*"[^"]*"' "basher/")
         MAX_ITERATIONS_CONFIG=$(json_get "$config_file" '.iterations.max' '"max"[[:space:]]*:[[:space:]]*[0-9]*' "")
         DELAY_CONFIG=$(json_get "$config_file" '.iterations.delaySeconds' '"delaySeconds"[[:space:]]*:[[:space:]]*[0-9]*' "")
         CLAUDE_MODEL=$(json_get "$config_file" '.claude.model' '"model"[[:space:]]*:[[:space:]]*"[^"]*"' "sonnet")
@@ -200,7 +200,7 @@ load_config() {
         log_warn "No config file found, using defaults"
         GIT_STRATEGY="single-branch"
         GIT_BASE_BRANCH="main"
-        GIT_BRANCH_PREFIX="ralph/"
+        GIT_BRANCH_PREFIX="basher/"
         CLAUDE_MODEL="sonnet"
         CACHEBASH_ENABLED="true"
     fi
@@ -232,7 +232,7 @@ check_mcp_config() {
         log_success "CacheBash MCP server configured"
     else
         log_warn "CacheBash MCP server not configured"
-        log_warn "Ralph will run without mobile notifications."
+        log_warn "Basher will run without mobile notifications."
         log_warn ""
         log_warn "To enable CacheBash:"
         log_warn "  1. Get API key from CacheBash app -> Settings"
@@ -259,7 +259,7 @@ get_prd_file() {
     prd_file=$(find_file "prd.json")
 
     if [[ -z "$prd_file" ]]; then
-        log_error "No prd.json found in $RALPH_LOCAL_DIR or $RALPH_GLOBAL_DIR"
+        log_error "No prd.json found in $BASHER_LOCAL_DIR or $BASHER_GLOBAL_DIR"
         log_error "Run 'claude /prd' to generate a PRD first"
         exit 1
     fi
@@ -269,7 +269,7 @@ get_prd_file() {
 
 get_branch_name() {
     local prd_file="$1"
-    grep -o '"branchName"[[:space:]]*:[[:space:]]*"[^"]*"' "$prd_file" | sed 's/.*: *"\([^"]*\)"/\1/' || echo "ralph/feature"
+    grep -o '"branchName"[[:space:]]*:[[:space:]]*"[^"]*"' "$prd_file" | sed 's/.*: *"\([^"]*\)"/\1/' || echo "basher/feature"
 }
 
 get_incomplete_count() {
@@ -322,11 +322,11 @@ setup_git_branch() {
 
 archive_previous_run() {
     local prd_file="$1"
-    local last_branch_file="$RALPH_LOCAL_DIR/.last-branch"
+    local last_branch_file="$BASHER_LOCAL_DIR/.last-branch"
     local current_branch
     current_branch=$(get_branch_name "$prd_file")
 
-    mkdir -p "$RALPH_LOCAL_DIR"
+    mkdir -p "$BASHER_LOCAL_DIR"
 
     if [[ -f "$last_branch_file" ]]; then
         local last_branch
@@ -334,18 +334,18 @@ archive_previous_run() {
 
         if [[ "$last_branch" != "$current_branch" ]]; then
             local archive_name
-            archive_name=$(echo "$last_branch" | sed 's|^ralph/||')
+            archive_name=$(echo "$last_branch" | sed 's|^basher/||')
             archive_name="${archive_name}-$(date +%Y%m%d-%H%M%S)"
 
             log_info "Archiving previous run: $archive_name"
-            mkdir -p "$RALPH_LOCAL_DIR/archive/$archive_name"
+            mkdir -p "$BASHER_LOCAL_DIR/archive/$archive_name"
 
-            [[ -f "$RALPH_LOCAL_DIR/progress.txt" ]] && mv "$RALPH_LOCAL_DIR/progress.txt" "$RALPH_LOCAL_DIR/archive/$archive_name/"
-            [[ -f "$RALPH_LOCAL_DIR/prd.json" ]] && cp "$RALPH_LOCAL_DIR/prd.json" "$RALPH_LOCAL_DIR/archive/$archive_name/"
+            [[ -f "$BASHER_LOCAL_DIR/progress.txt" ]] && mv "$BASHER_LOCAL_DIR/progress.txt" "$BASHER_LOCAL_DIR/archive/$archive_name/"
+            [[ -f "$BASHER_LOCAL_DIR/prd.json" ]] && cp "$BASHER_LOCAL_DIR/prd.json" "$BASHER_LOCAL_DIR/archive/$archive_name/"
 
-            echo "# Progress Log - $current_branch" > "$RALPH_LOCAL_DIR/progress.txt"
-            echo "Started: $(date)" >> "$RALPH_LOCAL_DIR/progress.txt"
-            echo "" >> "$RALPH_LOCAL_DIR/progress.txt"
+            echo "# Progress Log - $current_branch" > "$BASHER_LOCAL_DIR/progress.txt"
+            echo "Started: $(date)" >> "$BASHER_LOCAL_DIR/progress.txt"
+            echo "" >> "$BASHER_LOCAL_DIR/progress.txt"
         fi
     fi
 
@@ -357,14 +357,14 @@ archive_previous_run() {
 # ============================================================================
 
 init_progress_file() {
-    local progress_file="$RALPH_LOCAL_DIR/progress.txt"
+    local progress_file="$BASHER_LOCAL_DIR/progress.txt"
 
     if [[ ! -f "$progress_file" ]]; then
-        mkdir -p "$RALPH_LOCAL_DIR"
+        mkdir -p "$BASHER_LOCAL_DIR"
         cat > "$progress_file" << 'EOF'
 # Progress Log
 
-This file accumulates learnings across Ralph iterations.
+This file accumulates learnings across Basher iterations.
 Each iteration should append discoveries, patterns, and gotchas here.
 
 ## Codebase Patterns
@@ -422,19 +422,19 @@ run_claude_sequential() {
     output=$($claude_cmd --prompt-file "$prompt_file" --dangerously-skip-permissions 2>&1) || true
 
     # Check for completion signals
-    if echo "$output" | grep -q '<ralph>COMPLETE</ralph>'; then
+    if echo "$output" | grep -q '<basher>COMPLETE</basher>'; then
         log_success "All stories completed!"
         return 0
     fi
 
-    if echo "$output" | grep -q '<ralph>ITERATION_COMPLETE</ralph>'; then
+    if echo "$output" | grep -q '<basher>ITERATION_COMPLETE</basher>'; then
         log_success "Iteration $iteration completed successfully"
         return 1
     fi
 
-    if echo "$output" | grep -q '<ralph>ERROR</ralph>'; then
+    if echo "$output" | grep -q '<basher>ERROR</basher>'; then
         log_error "Iteration encountered an error"
-        echo "$output" | grep -A10 '<ralph>ERROR</ralph>' || true
+        echo "$output" | grep -A10 '<basher>ERROR</basher>' || true
         return 2
     fi
 
@@ -452,14 +452,14 @@ run_claude_parallel() {
     # Use orchestrator prompt for parallel mode
     prompt_file=$(find_file "prompts/orchestrator.md")
     if [[ -z "$prompt_file" ]]; then
-        prompt_file="$RALPH_GLOBAL_DIR/prompts/orchestrator.md"
+        prompt_file="$BASHER_GLOBAL_DIR/prompts/orchestrator.md"
     fi
 
     prd_file=$(get_prd_file)
 
     if [[ -z "$prompt_file" || ! -f "$prompt_file" ]]; then
         log_error "No orchestrator.md found for parallel mode"
-        log_error "Expected at: ./ralph/prompts/orchestrator.md or $RALPH_GLOBAL_DIR/prompts/orchestrator.md"
+        log_error "Expected at: ./basher/prompts/orchestrator.md or $BASHER_GLOBAL_DIR/prompts/orchestrator.md"
         exit 1
     fi
 
@@ -479,14 +479,14 @@ run_claude_parallel() {
     local output
     output=$($claude_cmd --prompt-file "$prompt_file" --dangerously-skip-permissions 2>&1) || true
 
-    if echo "$output" | grep -q '<ralph>COMPLETE</ralph>'; then
+    if echo "$output" | grep -q '<basher>COMPLETE</basher>'; then
         log_success "All stories completed!"
         return 0
     fi
 
-    if echo "$output" | grep -q '<ralph>ERROR</ralph>'; then
+    if echo "$output" | grep -q '<basher>ERROR</basher>'; then
         log_error "Orchestrator encountered an error"
-        echo "$output" | grep -A10 '<ralph>ERROR</ralph>' || true
+        echo "$output" | grep -A10 '<basher>ERROR</basher>' || true
         return 2
     fi
 
@@ -502,7 +502,7 @@ main() {
 
     echo ""
     echo -e "${CYAN}╔══════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${CYAN}║          Ralph for Claude Code - Autonomous Agent Loop       ║${NC}"
+    echo -e "${CYAN}║          Basher for Claude Code - Autonomous Agent Loop      ║${NC}"
     echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}"
     echo ""
 
@@ -541,7 +541,7 @@ main() {
 
         if [[ $result -eq 0 ]]; then
             log_success "══════════════════════════════════════════════════════════"
-            log_success "RALPH COMPLETE - All stories implemented!"
+            log_success "BASHER COMPLETE - All stories implemented!"
             log_success "══════════════════════════════════════════════════════════"
             exit 0
         else
@@ -560,7 +560,7 @@ main() {
             case $result in
                 0)
                     log_success "══════════════════════════════════════════════════════════"
-                    log_success "RALPH COMPLETE - All stories implemented!"
+                    log_success "BASHER COMPLETE - All stories implemented!"
                     log_success "══════════════════════════════════════════════════════════"
                     exit 0
                     ;;
@@ -574,7 +574,7 @@ main() {
 
             if check_all_complete "$prd_file"; then
                 log_success "══════════════════════════════════════════════════════════"
-                log_success "RALPH COMPLETE - All stories implemented!"
+                log_success "BASHER COMPLETE - All stories implemented!"
                 log_success "══════════════════════════════════════════════════════════"
                 exit 0
             fi

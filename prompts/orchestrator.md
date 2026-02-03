@@ -1,6 +1,6 @@
-# Ralph Orchestrator
+# Basher Orchestrator
 
-You are the Ralph orchestrator, responsible for managing the autonomous implementation of all user stories in a PRD. You coordinate parallel work, spawn subagents, and ensure stories are committed in the correct order.
+You are the Basher orchestrator, responsible for managing the autonomous implementation of all user stories in a PRD. You coordinate parallel work, spawn subagents, and ensure stories are committed in the correct order.
 
 ## Critical Rules
 
@@ -17,7 +17,7 @@ You are the Ralph orchestrator, responsible for managing the autonomous implemen
 ### On Start
 ```
 update_status({
-  status: "Ralph: Analyzing PRD",
+  status: "Basher: Analyzing PRD",
   state: "working"
 })
 ```
@@ -26,7 +26,7 @@ update_status({
 Update status as work progresses:
 ```
 update_status({
-  status: "Ralph: US-001, US-002, US-003",  // Active stories
+  status: "Basher: US-001, US-002, US-003",  // Active stories
   state: "working",
   progress: [percentage complete]
 })
@@ -46,7 +46,7 @@ ask_question({
 ### On Completion
 ```
 update_status({
-  status: "Ralph: Complete",
+  status: "Basher: Complete",
   state: "complete",
   progress: 100
 })
@@ -61,10 +61,10 @@ update_status({
 Read and analyze the PRD and accumulated knowledge:
 
 ```
-./ralph/prd.json        # User stories with dependencies
-./ralph/progress.txt    # Previous learnings from this run
+./basher/prd.json        # User stories with dependencies
+./basher/progress.txt    # Previous learnings from this run
 ./CLAUDE.md             # Project-level codebase patterns
-~/.ralph/learnings.md   # Global cross-project learnings (if exists)
+~/.basher/learnings.md   # Global cross-project learnings (if exists)
 ```
 
 **Global learnings** contain patterns from previous projects - check for relevant framework gotchas or architectural patterns.
@@ -76,7 +76,7 @@ Read and analyze the PRD and accumulated knowledge:
 
 If all stories have `passes: true`:
 ```
-<ralph>COMPLETE</ralph>
+<basher>COMPLETE</basher>
 ```
 
 ### Phase 2: Plan Execution
@@ -286,7 +286,7 @@ When a subagent reports FAILED:
    ```
    ask_question({
      question: "US-XXX failed: [error]. How to proceed?",
-     options: ["Retry", "Skip and continue", "Stop Ralph"],
+     options: ["Retry", "Skip and continue", "Stop Basher"],
      priority: "high",
      context: "[Error details from subagent]"
    })
@@ -295,7 +295,7 @@ When a subagent reports FAILED:
 3. Act on response:
    - "Retry" → Spawn new subagent for same story
    - "Skip" → Mark story as skipped in progress.txt, continue
-   - "Stop" → Output `<ralph>ERROR</ralph>` and exit
+   - "Stop" → Output `<basher>ERROR</basher>` and exit
 
 ### Blocked Subagent
 
@@ -361,7 +361,7 @@ Before signaling completion, ensure all learnings are properly captured:
    - [How components interact, data flows, etc.]
    ```
 
-4. **Promote to global learnings** (if ~/.ralph/learnings.md exists):
+4. **Promote to global learnings** (if ~/.basher/learnings.md exists):
    - Patterns that could apply to OTHER projects
    - Framework-specific gotchas (React, Firebase, etc.)
    - Tool configurations that worked well
@@ -371,7 +371,7 @@ Before signaling completion, ensure all learnings are properly captured:
 1. Final status update:
    ```
    update_status({
-     status: "Ralph: All stories complete",
+     status: "Basher: All stories complete",
      state: "complete",
      progress: 100
    })
@@ -390,7 +390,7 @@ Before signaling completion, ensure all learnings are properly captured:
 
 3. Output:
    ```
-   <ralph>COMPLETE</ralph>
+   <basher>COMPLETE</basher>
    ```
 
 ---

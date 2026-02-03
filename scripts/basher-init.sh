@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 #
-# Ralph Init - Initialize Ralph in the current project
+# Basher Init - Initialize Basher in the current project
 #
-# Usage: ralph-init [project-name]
+# Usage: basher-init [project-name]
 #
-# Creates the ./ralph/ directory structure in the current project
+# Creates the ./basher/ directory structure in the current project
 # with optional config customization.
 #
 
@@ -16,9 +16,9 @@ set -euo pipefail
 
 show_help() {
     cat << 'EOF'
-Ralph Init - Initialize Ralph in the current project
+Basher Init - Initialize Basher in the current project
 
-Usage: ralph-init.sh [OPTIONS] [project-name]
+Usage: basher-init.sh [OPTIONS] [project-name]
 
 Arguments:
   project-name      Name for the project (default: current directory name)
@@ -28,21 +28,21 @@ Options:
   --skip-cachebash  Skip CacheBash MCP configuration check
 
 Description:
-  Creates the ./ralph/ directory structure in the current project with
+  Creates the ./basher/ directory structure in the current project with
   configuration files, progress tracking, and transcript placeholder.
 
 What it creates:
-  ./ralph/ralph.config.json  - Project configuration
-  ./ralph/progress.txt       - Progress log for iterations
-  ./ralph/transcript.txt     - Placeholder for meeting notes
-  ./ralph/archive/           - Archive directory for previous runs
+  ./basher/basher.config.json  - Project configuration
+  ./basher/progress.txt       - Progress log for iterations
+  ./basher/transcript.txt     - Placeholder for meeting notes
+  ./basher/archive/           - Archive directory for previous runs
 
 Examples:
-  ralph-init.sh              # Initialize with directory name as project
-  ralph-init.sh my-app       # Initialize with custom project name
-  ralph-init.sh --help       # Show this help message
+  basher-init.sh              # Initialize with directory name as project
+  basher-init.sh my-app       # Initialize with custom project name
+  basher-init.sh --help       # Show this help message
 
-For more information, see: https://github.com/anthropics/ralph-claude-code
+For more information, see: https://github.com/feelgreatfoodie/basher
 EOF
     exit 0
 }
@@ -52,7 +52,7 @@ if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
     show_help
 fi
 
-RALPH_GLOBAL="${RALPH_HOME:-$HOME/.ralph}"
+BASHER_GLOBAL="${BASHER_HOME:-$HOME/.basher}"
 SKIP_CACHEBASH=false
 
 # Parse arguments
@@ -104,20 +104,20 @@ fi
 
 echo ""
 echo -e "${CYAN}╔══════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${CYAN}║            Ralph Init - Project Setup                        ║${NC}"
+echo -e "${CYAN}║            Basher Init - Project Setup                       ║${NC}"
 echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}"
 echo ""
 
 # Check if we're in a git repo
 if ! git rev-parse --is-inside-work-tree &>/dev/null; then
     echo -e "${YELLOW}[init]${NC} Warning: Not in a git repository"
-    echo -e "${YELLOW}[init]${NC} Ralph works best with git. Consider running: git init"
+    echo -e "${YELLOW}[init]${NC} Basher works best with git. Consider running: git init"
     echo ""
 fi
 
 # Check if already initialized
-if [[ -d "./ralph" ]]; then
-    echo -e "${YELLOW}[init]${NC} ./ralph directory already exists"
+if [[ -d "./basher" ]]; then
+    echo -e "${YELLOW}[init]${NC} ./basher directory already exists"
     read -p "Overwrite configuration? (y/N) " -n 1 -r
     echo
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
@@ -127,22 +127,22 @@ if [[ -d "./ralph" ]]; then
 fi
 
 # Create directory structure
-echo -e "${BLUE}[init]${NC} Creating ./ralph directory..."
-mkdir -p ./ralph/archive
-mkdir -p ./ralph/prompts
+echo -e "${BLUE}[init]${NC} Creating ./basher directory..."
+mkdir -p ./basher/archive
+mkdir -p ./basher/prompts
 
 # Copy config template
 echo -e "${BLUE}[init]${NC} Creating configuration..."
-if [[ -f "$RALPH_GLOBAL/templates/ralph.config.json" ]]; then
-    sed "s/\"my-project\"/\"$PROJECT_NAME\"/" "$RALPH_GLOBAL/templates/ralph.config.json" > ./ralph/ralph.config.json
+if [[ -f "$BASHER_GLOBAL/templates/basher.config.json" ]]; then
+    sed "s/\"my-project\"/\"$PROJECT_NAME\"/" "$BASHER_GLOBAL/templates/basher.config.json" > ./basher/basher.config.json
 else
-    cat > ./ralph/ralph.config.json << EOF
+    cat > ./basher/basher.config.json << EOF
 {
   "project": "$PROJECT_NAME",
   "git": {
     "strategy": "single-branch",
     "baseBranch": "main",
-    "branchPrefix": "ralph/"
+    "branchPrefix": "basher/"
   },
   "quality": {
     "autoDetect": true,
@@ -176,7 +176,7 @@ fi
 
 # Initialize progress file
 echo -e "${BLUE}[init]${NC} Creating progress.txt..."
-cat > ./ralph/progress.txt << EOF
+cat > ./basher/progress.txt << EOF
 # Progress Log - $PROJECT_NAME
 
 Started: $(date)
@@ -185,12 +185,12 @@ Started: $(date)
 <!-- Patterns discovered during implementation will be added here -->
 
 ## Iteration Log
-<!-- Each Ralph iteration will append its progress here -->
+<!-- Each Basher iteration will append its progress here -->
 EOF
 
 # Create placeholder for transcript
 echo -e "${BLUE}[init]${NC} Creating transcript placeholder..."
-cat > ./ralph/transcript.txt << EOF
+cat > ./basher/transcript.txt << EOF
 # Meeting Transcript / Feature Notes
 
 Replace this file with your meeting transcript or feature notes.
@@ -211,8 +211,8 @@ EOF
 
 # Detect tech stack
 echo -e "${BLUE}[init]${NC} Detecting tech stack..."
-if [[ -f "$RALPH_GLOBAL/lib/detect-stack.sh" ]]; then
-    source "$RALPH_GLOBAL/lib/detect-stack.sh"
+if [[ -f "$BASHER_GLOBAL/lib/detect-stack.sh" ]]; then
+    source "$BASHER_GLOBAL/lib/detect-stack.sh"
     detect_stack "."
 
     if [[ "$STACK_TYPE" != "unknown" ]]; then
@@ -224,10 +224,10 @@ if [[ -f "$RALPH_GLOBAL/lib/detect-stack.sh" ]]; then
         [[ -n "$TEST_CMD" ]] && echo "  Test:      $TEST_CMD"
         [[ -n "$BUILD_CMD" ]] && echo "  Build:     $BUILD_CMD"
         echo ""
-        echo "Override in ./ralph/ralph.config.json if needed."
+        echo "Override in ./basher/basher.config.json if needed."
     else
         echo -e "${YELLOW}[init]${NC} Could not auto-detect tech stack"
-        echo -e "${YELLOW}[init]${NC} Set quality commands manually in ./ralph/ralph.config.json"
+        echo -e "${YELLOW}[init]${NC} Set quality commands manually in ./basher/basher.config.json"
     fi
 else
     echo -e "${YELLOW}[init]${NC} Stack detection not available"
@@ -235,11 +235,11 @@ fi
 
 # Add to .gitignore
 if [[ -f ".gitignore" ]]; then
-    if ! grep -q "ralph/archive" .gitignore 2>/dev/null; then
-        echo -e "${BLUE}[init]${NC} Adding ralph/archive to .gitignore..."
+    if ! grep -q "basher/archive" .gitignore 2>/dev/null; then
+        echo -e "${BLUE}[init]${NC} Adding basher/archive to .gitignore..."
         echo "" >> .gitignore
-        echo "# Ralph archives" >> .gitignore
-        echo "ralph/archive/" >> .gitignore
+        echo "# Basher archives" >> .gitignore
+        echo "basher/archive/" >> .gitignore
     fi
 fi
 
@@ -262,11 +262,11 @@ check_cachebash() {
 
     if claude mcp list 2>/dev/null | grep -q "cachebash"; then
         echo -e "${GREEN}[init]${NC} CacheBash MCP server is configured"
-        echo -e "${GREEN}[init]${NC} Ralph will send status updates to your mobile device"
+        echo -e "${GREEN}[init]${NC} Basher will send status updates to your mobile device"
     else
         echo -e "${YELLOW}[init]${NC} CacheBash MCP server not configured"
         echo ""
-        echo "CacheBash enables Ralph to:"
+        echo "CacheBash enables Basher to:"
         echo "  - Send status updates to your phone"
         echo "  - Ask questions when blocked (you answer via mobile)"
         echo "  - Notify you of errors and completion"
@@ -282,12 +282,12 @@ check_cachebash() {
 
             # Disable CacheBash in config since it's not set up
             if command -v jq &>/dev/null; then
-                jq '.cachebash.enabled = false' ./ralph/ralph.config.json > ./ralph/ralph.config.json.tmp
-                mv ./ralph/ralph.config.json.tmp ./ralph/ralph.config.json
+                jq '.cachebash.enabled = false' ./basher/basher.config.json > ./basher/basher.config.json.tmp
+                mv ./basher/basher.config.json.tmp ./basher/basher.config.json
             else
                 # Fallback: use sed
-                sed -i.bak 's/"enabled": true/"enabled": false/' ./ralph/ralph.config.json
-                rm -f ./ralph/ralph.config.json.bak
+                sed -i.bak 's/"enabled": true/"enabled": false/' ./basher/basher.config.json
+                rm -f ./basher/basher.config.json.bak
             fi
         fi
     fi
@@ -334,7 +334,7 @@ setup_cachebash() {
         "https://cachebash-mcp-922749444863.us-central1.run.app/v1/mcp" \
         --header "Authorization: Bearer $API_KEY" 2>/dev/null; then
         echo -e "${GREEN}[init]${NC} CacheBash configured successfully!"
-        echo -e "${GREEN}[init]${NC} Ralph will now send updates to your mobile device."
+        echo -e "${GREEN}[init]${NC} Basher will now send updates to your mobile device."
     else
         echo -e "${RED}[init]${NC} Failed to configure CacheBash"
         echo -e "${YELLOW}[init]${NC} You can try manually with:"
@@ -353,15 +353,15 @@ check_cachebash
 
 echo ""
 echo -e "${GREEN}════════════════════════════════════════════════════════════════${NC}"
-echo -e "${GREEN}Ralph initialized for: $PROJECT_NAME${NC}"
+echo -e "${GREEN}Basher initialized for: $PROJECT_NAME${NC}"
 echo -e "${GREEN}════════════════════════════════════════════════════════════════${NC}"
 echo ""
 echo "Created:"
-echo "  ./ralph/ralph.config.json  - Project configuration"
-echo "  ./ralph/progress.txt       - Progress log"
-echo "  ./ralph/transcript.txt     - Placeholder for meeting notes"
+echo "  ./basher/basher.config.json  - Project configuration"
+echo "  ./basher/progress.txt       - Progress log"
+echo "  ./basher/transcript.txt     - Placeholder for meeting notes"
 echo ""
-echo "Configuration options in ralph.config.json:"
+echo "Configuration options in basher.config.json:"
 echo "  parallel.enabled    - Enable parallel story execution (default: false)"
 echo "  cachebash.enabled   - Enable mobile notifications (default: true)"
 echo "  quality.smartRecovery - Auto-fix quality gate errors (default: true)"
@@ -370,15 +370,15 @@ echo "Next steps:"
 echo "─────────────────────────────────────────────────────────────────"
 echo ""
 echo "1. Add your meeting notes or feature description:"
-echo "   ${CYAN}Edit ./ralph/transcript.txt${NC}"
+echo "   ${CYAN}Edit ./basher/transcript.txt${NC}"
 echo ""
 echo "2. Generate a PRD:"
 echo "   ${CYAN}claude /prd${NC}"
 echo ""
 echo "3. Convert to JSON (after reviewing PRD):"
-echo "   ${CYAN}claude /ralph-convert${NC}"
+echo "   ${CYAN}claude /basher-convert${NC}"
 echo ""
 echo "4. Run autonomous implementation:"
-echo "   ${CYAN}~/.ralph/ralph.sh${NC}              # Sequential mode"
-echo "   ${CYAN}~/.ralph/ralph.sh --parallel${NC}   # Parallel mode (orchestrator)"
+echo "   ${CYAN}~/.basher/basher.sh${NC}              # Sequential mode"
+echo "   ${CYAN}~/.basher/basher.sh --parallel${NC}   # Parallel mode (orchestrator)"
 echo ""

@@ -20,7 +20,7 @@ Runs comprehensive checks on a blueprint to ensure:
 2. Content meets minimum quality standards
 3. Internal links resolve correctly
 4. Code templates are syntactically valid
-5. PRD fragments are Ralph-compatible
+5. PRD fragments are Basher-compatible
 
 ## Output
 
@@ -51,7 +51,7 @@ blueprint/
 ├── architecture/           # Optional
 ├── security/               # Optional
 ├── process/                # Optional
-└── ralph/                  # Optional
+└── basher/                  # Optional
 ```
 
 ### 2. File Size Verification
@@ -116,7 +116,7 @@ Check that:
 
 ### 5. PRD Compatibility
 
-Verify prd-fragment.md works with Ralph:
+Verify prd-fragment.md works with Basher:
 - Story IDs follow pattern (US-DOMAIN-NNN)
 - Acceptance criteria are checkable
 - Technical notes provide implementation hints
@@ -341,6 +341,6 @@ Output as JSON for programmatic consumption.
 ## Notes
 
 - Run verification after any significant changes
-- Address critical issues before using with Ralph
+- Address critical issues before using with Basher
 - Warnings indicate areas for improvement
 - Use `--strict` before publishing blueprint

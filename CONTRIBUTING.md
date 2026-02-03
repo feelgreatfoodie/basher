@@ -1,4 +1,4 @@
-# Contributing to Ralph for Claude Code
+# Contributing to Basher for Claude Code
 
 Thank you for your interest in contributing! This document provides guidelines and instructions for contributing.
 
@@ -49,8 +49,8 @@ We welcome code contributions:
    - Click "Fork" on GitHub
    - Clone your fork locally:
      ```bash
-     git clone https://github.com/feelgreatfoodie/ralph-claude-code.git
-     cd ralph-claude-code
+     git clone https://github.com/feelgreatfoodie/basher-claude-code.git
+     cd basher-claude-code
      ```
 
 2. **Create a branch**
@@ -96,7 +96,7 @@ We welcome code contributions:
 set -euo pipefail
 
 # Global configuration
-RALPH_HOME="${RALPH_HOME:-$HOME/.ralph}"
+BASHER_HOME="${BASHER_HOME:-$HOME/.basher}"
 
 # Check if a file exists and is readable
 check_file() {
@@ -149,20 +149,20 @@ refactor: simplify tech stack detection logic
    ```bash
    mkdir test-project && cd test-project
    git init
-   ~/.ralph/ralph-init.sh
+   ~/.basher/basher-init.sh
    ```
 
 3. **Test the full workflow:**
    - Create a simple transcript
    - Generate PRD
    - Convert to JSON
-   - Run ralph.sh
+   - Run basher.sh
 
 ### What to Test
 
 - [ ] Installation on a fresh system
 - [ ] Installation over an existing installation
-- [ ] ralph-init.sh in various project types
+- [ ] basher-init.sh in various project types
 - [ ] Tech stack detection for affected languages
 - [ ] The full PRD → JSON → execution workflow
 - [ ] Error handling for edge cases

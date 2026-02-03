@@ -1,6 +1,6 @@
 # Troubleshooting Guide
 
-This guide covers common issues and their solutions when using Ralph for Claude Code.
+This guide covers common issues and their solutions when using Basher for Claude Code.
 
 ---
 
@@ -40,8 +40,8 @@ sudo yum install curl
 
 **Alternative:** Clone the repository manually instead:
 ```bash
-git clone https://github.com/feelgreatfoodie/ralph-claude-code.git
-cd ralph-claude-code
+git clone https://github.com/feelgreatfoodie/basher-claude-code.git
+cd basher-claude-code
 ./install.sh
 ```
 
@@ -89,30 +89,30 @@ chmod +x install.sh
 
 ---
 
-### Installation succeeds but ralph.sh not found
+### Installation succeeds but basher.sh not found
 
-**Problem:** Ralph was installed but the command isn't recognized.
+**Problem:** Basher was installed but the command isn't recognized.
 
 **Solution:**
 
-Add Ralph to your PATH:
+Add Basher to your PATH:
 
 For Zsh (default on Mac):
 ```bash
-echo 'export PATH="$HOME/.ralph:$PATH"' >> ~/.zshrc
+echo 'export PATH="$HOME/.basher:$PATH"' >> ~/.zshrc
 source ~/.zshrc
 ```
 
 For Bash:
 ```bash
-echo 'export PATH="$HOME/.ralph:$PATH"' >> ~/.bashrc
+echo 'export PATH="$HOME/.basher:$PATH"' >> ~/.bashrc
 source ~/.bashrc
 ```
 
 Verify:
 ```bash
-which ralph.sh
-# Should output: /Users/yourname/.ralph/ralph.sh
+which basher.sh
+# Should output: /Users/yourname/.basher/basher.sh
 ```
 
 ---
@@ -121,7 +121,7 @@ which ralph.sh
 
 ### "Not in a git repository"
 
-**Problem:** Ralph requires git to track changes.
+**Problem:** Basher requires git to track changes.
 
 **Solution:**
 
@@ -137,7 +137,7 @@ git commit -m "Initial commit"
 
 ### "No prd.json found"
 
-**Problem:** Ralph can't find the task list.
+**Problem:** Basher can't find the task list.
 
 **Solution:**
 
@@ -150,26 +150,26 @@ git commit -m "Initial commit"
    /prd
 
    # Convert to JSON
-   /ralph-convert
+   /basher-convert
    ```
 
 2. Check that the files exist:
    ```bash
-   ls -la ./ralph/
+   ls -la ./basher/
    # Should show prd.md and prd.json
    ```
 
 3. If files are in the wrong location, move them:
    ```bash
-   mkdir -p ./ralph
-   mv prd.json ./ralph/
+   mkdir -p ./basher
+   mv prd.json ./basher/
    ```
 
 ---
 
 ### "Max iterations reached"
 
-**Problem:** Ralph hit the safety limit without completing all tasks.
+**Problem:** Basher hit the safety limit without completing all tasks.
 
 **Possible causes:**
 - Tasks are too complex
@@ -181,22 +181,22 @@ git commit -m "Initial commit"
 1. **Check remaining tasks:**
    ```bash
    # Look at prd.json to see what's incomplete
-   cat ./ralph/prd.json | grep '"passes": false'
+   cat ./basher/prd.json | grep '"passes": false'
    ```
 
 2. **Increase the iteration limit:**
    ```bash
-   ~/.ralph/ralph.sh 50  # Run up to 50 iterations
+   ~/.basher/basher.sh 50  # Run up to 50 iterations
    ```
 
 3. **Check progress.txt for patterns:**
    ```bash
-   cat ./ralph/progress.txt
+   cat ./basher/progress.txt
    # Look for repeated errors or stuck tasks
    ```
 
 4. **Split complex tasks:**
-   Edit `./ralph/prd.json` and break large tasks into smaller ones.
+   Edit `./basher/prd.json` and break large tasks into smaller ones.
 
 ---
 
@@ -206,7 +206,7 @@ git commit -m "Initial commit"
 
 **Solution:**
 
-1. **Make tasks smaller.** Edit `./ralph/prd.json` and split:
+1. **Make tasks smaller.** Edit `./basher/prd.json` and split:
 
    Instead of:
    ```json
@@ -248,12 +248,12 @@ git commit -m "Initial commit"
 
 1. **Run with debug mode:**
    ```bash
-   bash -x ~/.ralph/ralph.sh 2>&1 | head -100
+   bash -x ~/.basher/basher.sh 2>&1 | head -100
    ```
 
 2. **Check for syntax errors:**
    ```bash
-   bash -n ~/.ralph/ralph.sh
+   bash -n ~/.basher/basher.sh
    ```
 
 3. **Verify file integrity:**
@@ -291,7 +291,7 @@ git commit -m "Initial commit"
    ```
 
 3. **Disable auto-detection and specify custom command:**
-   Edit `./ralph/ralph.config.json`:
+   Edit `./basher/basher.config.json`:
    ```json
    {
      "quality": {
@@ -319,7 +319,7 @@ git commit -m "Initial commit"
    pytest -v
    ```
 
-2. **Check if tests existed before Ralph:**
+2. **Check if tests existed before Basher:**
    Maybe there were pre-existing failing tests.
 
 3. **Review recent changes:**
@@ -365,24 +365,24 @@ git commit -m "Initial commit"
 
 ### "Branch already exists"
 
-**Problem:** The feature branch Ralph wants to use already exists.
+**Problem:** The feature branch Basher wants to use already exists.
 
 **Solutions:**
 
 1. **Delete the old branch (if safe):**
    ```bash
-   git branch -D ralph/your-feature
+   git branch -D basher/your-feature
    ```
 
 2. **Or use the existing branch:**
    ```bash
-   git checkout ralph/your-feature
+   git checkout basher/your-feature
    ```
 
-3. **Or change the branch name** in `./ralph/prd.json`:
+3. **Or change the branch name** in `./basher/prd.json`:
    ```json
    {
-     "branchName": "ralph/your-feature-v2",
+     "branchName": "basher/your-feature-v2",
      ...
    }
    ```
@@ -406,9 +406,9 @@ git commit -m "Initial commit"
 2. **Start fresh:**
    ```bash
    git checkout main
-   git branch -D ralph/your-feature
+   git branch -D basher/your-feature
    # Reset prd.json passes to false
-   # Run Ralph again
+   # Run Basher again
    ```
 
 ---
@@ -422,13 +422,13 @@ git commit -m "Initial commit"
 - Claude misunderstood the task
 - Files were modified but not saved
 
-**Solution:** Check `./ralph/progress.txt` to see what Claude did (or didn't do).
+**Solution:** Check `./basher/progress.txt` to see what Claude did (or didn't do).
 
 ---
 
 ## Performance Issues
 
-### Ralph is very slow
+### Basher is very slow
 
 **Possible causes:**
 - Large codebase (more context to process)
@@ -481,7 +481,7 @@ git commit -m "Initial commit"
 
 **Progress log:**
 ```bash
-cat ./ralph/progress.txt
+cat ./basher/progress.txt
 ```
 
 **Git history:**
@@ -493,7 +493,7 @@ git log -p  # With diffs
 **Last iteration output:**
 Check your terminal scrollback, or redirect output:
 ```bash
-~/.ralph/ralph.sh 2>&1 | tee ralph-output.log
+~/.basher/basher.sh 2>&1 | tee basher-output.log
 ```
 
 ### Reporting issues
@@ -504,13 +504,13 @@ When reporting issues, please include:
 2. **Output of:** `claude --version`
 3. **The error message** (full text)
 4. **Contents of:**
-   - `./ralph/ralph.config.json`
-   - `./ralph/progress.txt` (last 50 lines)
+   - `./basher/basher.config.json`
+   - `./basher/progress.txt` (last 50 lines)
 5. **Steps to reproduce**
 
-Open issues at: https://github.com/feelgreatfoodie/ralph-claude-code/issues
+Open issues at: https://github.com/feelgreatfoodie/basher-claude-code/issues
 
 ### Community support
 
-- GitHub Discussions: https://github.com/feelgreatfoodie/ralph-claude-code/discussions
+- GitHub Discussions: https://github.com/feelgreatfoodie/basher-claude-code/discussions
 - Search existing issues first — your problem may already be solved!

@@ -1,4 +1,4 @@
-# Ralph Global Learnings
+# Basher Global Learnings
 
 This file accumulates learnings across ALL projects. Patterns discovered here apply broadly.
 
@@ -48,5 +48,5 @@ This file accumulates learnings across ALL projects. Patterns discovered here ap
 
 ---
 
-*This file grows over time as Ralph works on more projects.*
+*This file grows over time as Basher works on more projects.*
 *Last updated: [date]*

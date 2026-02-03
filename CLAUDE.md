@@ -1,25 +1,25 @@
-# Ralph for Claude Code
+# Basher for Claude Code
 
 ## Project Overview
 
-Ralph is an autonomous code generation system that uses Claude Code to implement entire projects from meeting notes or PRDs. It breaks work into small tasks, runs each in a fresh Claude session, and commits changes incrementally.
+Basher is an autonomous code generation system that uses Claude Code to implement entire projects from meeting notes or PRDs. It breaks work into small tasks, runs each in a fresh Claude session, and commits changes incrementally.
 
 **New in v2:** CacheBash integration for mobile communication, parallel story execution, and smart error recovery.
 
 ## Repository Structure
 
 ```
-ralph-claude-code/
+basher/
 ├── scripts/                    # Core execution scripts
-│   ├── ralph.sh               # Main execution loop (sequential + parallel modes)
-│   ├── ralph-init.sh          # Project initialization
+│   ├── basher.sh              # Main execution loop (sequential + parallel modes)
+│   ├── basher-init.sh         # Project initialization
 │   └── package.sh             # Create shareable package
 ├── prompts/                    # Agent prompts for parallel mode
 │   ├── orchestrator.md        # Main orchestrator prompt
 │   └── subagent-story.md      # Subagent prompt for parallel work
 ├── skills/                     # Claude Code skills (prompt templates)
 │   ├── prd/                   # /prd - Generate PRD from notes
-│   ├── ralph-convert/         # /ralph-convert - PRD to JSON
+│   ├── basher-convert/        # /basher-convert - PRD to JSON
 │   ├── compose-prd/           # /compose-prd - Merge domain PRDs
 │   ├── extract-domain/        # /extract-domain - Extract from codebase
 │   ├── kickoff/               # /kickoff - Interactive project setup
@@ -41,12 +41,12 @@ ralph-claude-code/
 
 | Mode | Command | Description |
 |------|---------|-------------|
-| Sequential | `ralph.sh` | One story at a time, iteration loop |
-| Parallel | `ralph.sh --parallel` | Orchestrator spawns subagents for concurrent work |
+| Sequential | `basher.sh` | One story at a time, iteration loop |
+| Parallel | `basher.sh --parallel` | Orchestrator spawns subagents for concurrent work |
 
 ### CacheBash Integration
 
-Ralph communicates with users via mobile when running autonomously:
+Basher communicates with users via mobile when running autonomously:
 - **Status updates** - Track progress from your phone
 - **Question asking** - Answer blocking questions via mobile app
 - **Error notifications** - Get notified of failures immediately
@@ -60,10 +60,10 @@ Quality gates now have intelligent debugging:
 
 ## Key Scripts
 
-### ralph.sh
+### basher.sh
 
 Main autonomous execution loop:
-- **Sequential mode**: Reads `./ralph/prd.json`, runs one story per iteration
+- **Sequential mode**: Reads `./basher/prd.json`, runs one story per iteration
 - **Parallel mode**: Uses orchestrator to spawn subagents for concurrent work
 - Executes quality gates (lint, typecheck, test, build)
 - Commits changes to git
@@ -74,10 +74,10 @@ New flags:
 - `--sequential` - Force sequential mode (default)
 - `--no-mcp-check` - Skip CacheBash MCP configuration check
 
-### ralph-init.sh
+### basher-init.sh
 
-Initializes a project for Ralph:
-- Creates `./ralph/` directory with prompts subdirectory
+Initializes a project for Basher:
+- Creates `./basher/` directory with prompts subdirectory
 - Auto-detects tech stack
 - Creates configuration files with new options
 - Optionally sets up CacheBash MCP server
@@ -90,7 +90,7 @@ New flags:
 
 ### prompt.md (Sequential Mode)
 
-Instructions for a single Ralph iteration:
+Instructions for a single Basher iteration:
 - Read state from files
 - Select next incomplete story
 - Implement with smart recovery
@@ -116,7 +116,7 @@ Template for subagent workers:
 
 ## Configuration
 
-`ralph.config.json` new options:
+`basher.config.json` new options:
 
 ```json
 {
@@ -140,7 +140,7 @@ Template for subagent workers:
 | Skill | Purpose |
 |-------|---------|
 | `/prd` | Generate structured PRD from meeting notes |
-| `/ralph-convert` | Convert PRD markdown to JSON task list |
+| `/basher-convert` | Convert PRD markdown to JSON task list |
 | `/compose-prd` | Merge multiple domain PRD fragments |
 | `/extract-domain` | Extract patterns from existing codebase |
 | `/kickoff` | Interactive Q&A for new project setup |
@@ -168,7 +168,7 @@ domains/[name]/
 ├── patterns.md         # Implementation patterns with code
 ├── deep-dive.md        # Educational: WHY these patterns work
 ├── questions.md        # Planning questions (15-25)
-├── prd-fragment.md     # User stories for Ralph
+├── prd-fragment.md     # User stories for Basher
 └── templates/          # Reusable code snippets
 ```
 
@@ -200,7 +200,7 @@ After modifying saas-blueprint:
 
 ## Critical Rules
 
-1. **Fresh Context Per Task** - Ralph's key innovation. Each task runs in a new Claude session to prevent confusion.
+1. **Fresh Context Per Task** - Basher's key innovation. Each task runs in a new Claude session to prevent confusion.
 
 2. **External State** - All important information must be in files (progress.txt, prd.json), not Claude's memory.
 
@@ -222,13 +222,13 @@ Learnings flow upward through three tiers:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  ~/.ralph/learnings.md (Global)                             │
+│  ~/.basher/learnings.md (Global)                            │
 │  Cross-project patterns, framework gotchas, tool configs    │
 ├─────────────────────────────────────────────────────────────┤
 │  ./CLAUDE.md (Project)                                      │
 │  Reusable patterns, critical rules, architecture notes      │
 ├─────────────────────────────────────────────────────────────┤
-│  ./ralph/progress.txt (Run)                                 │
+│  ./basher/progress.txt (Run)                                │
 │  Story-specific learnings, iteration logs                   │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -248,30 +248,30 @@ Learnings flow upward through three tiers:
 
 1. **Subagent** discovers pattern → Reports in LEARNINGS field
 2. **Orchestrator** consolidates → Writes to progress.txt, promotes to CLAUDE.md
-3. **End of project** → Framework patterns promoted to ~/.ralph/learnings.md
+3. **End of project** → Framework patterns promoted to ~/.basher/learnings.md
 4. **Next project** → Agents read learnings.md for cross-project knowledge
 
 ## Testing Changes
 
-### Test ralph-init.sh
+### Test basher-init.sh
 ```bash
 mkdir /tmp/test-project && cd /tmp/test-project
 git init
-/path/to/ralph-init.sh
+/path/to/basher-init.sh
 ```
 
-### Test ralph.sh (Sequential)
+### Test basher.sh (Sequential)
 ```bash
 cd test-project
 # Add a simple prd.json
-~/.ralph/ralph.sh
+~/.basher/basher.sh
 ```
 
-### Test ralph.sh (Parallel)
+### Test basher.sh (Parallel)
 ```bash
 cd test-project
 # Add prd.json with multiple independent stories
-~/.ralph/ralph.sh --parallel
+~/.basher/basher.sh --parallel
 ```
 
 ### Test Blueprint Verification
@@ -282,7 +282,7 @@ cd test-project
 ## Related Repositories
 
 - `saas-blueprint/` - Separate git repo inside this project
-- User projects use `./ralph/` directory (created by ralph-init.sh)
+- User projects use `./basher/` directory (created by basher-init.sh)
 
 ## Common Tasks
 
@@ -309,4 +309,4 @@ cd test-project
 
 ---
 
-*Last updated: 2026-01-31*
+*Last updated: 2026-02-02*

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Tech Stack Auto-Detection for Ralph
+# Tech Stack Auto-Detection for Basher
 #
 # Detects the project's technology stack and outputs appropriate
 # quality gate commands. Can be sourced or run directly.

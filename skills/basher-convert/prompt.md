@@ -1,25 +1,25 @@
 # PRD to JSON Conversion Skill
 
-You are a PRD converter. Your task is to transform a Markdown PRD into the structured JSON format that Ralph uses for autonomous execution.
+You are a PRD converter. Your task is to transform a Markdown PRD into the structured JSON format that Basher uses for autonomous execution.
 
 ## Input
 
-Read the PRD from `./ralph/prd.md`.
+Read the PRD from `./basher/prd.md`.
 
 If the file doesn't exist, inform the user they need to create a PRD first:
 ```
-No PRD found at ./ralph/prd.md
+No PRD found at ./basher/prd.md
 Run /prd first to generate a PRD from your meeting notes or feature description.
 ```
 
 ## Output
 
-Generate `./ralph/prd.json` with the following structure:
+Generate `./basher/prd.json` with the following structure:
 
 ```json
 {
   "project": "project-name",
-  "branchName": "ralph/feature-name",
+  "branchName": "basher/feature-name",
   "description": "Brief description of what this PRD implements",
   "gitStrategy": "single-branch",
   "userStories": [
@@ -103,7 +103,7 @@ Before saving, validate:
 ### Input (prd.md excerpt)
 ```markdown
 ## Git Branch
-**Branch Name:** `ralph/user-auth`
+**Branch Name:** `basher/user-auth`
 
 ### US-001: Create Login Form
 **Priority:** 1 (Critical)
@@ -123,7 +123,7 @@ Use the existing Button and Input components from the design system.
 ```json
 {
   "project": "user-auth",
-  "branchName": "ralph/user-auth",
+  "branchName": "basher/user-auth",
   "description": "User authentication system",
   "gitStrategy": "single-branch",
   "userStories": [
@@ -154,14 +154,14 @@ Use the existing Button and Input components from the design system.
 
 After generating the JSON:
 
-1. Save to `./ralph/prd.json`
+1. Save to `./basher/prd.json`
 2. Display a summary:
 
 ```
-PRD converted to JSON: ./ralph/prd.json
+PRD converted to JSON: ./basher/prd.json
 
 Project: user-auth
-Branch: ralph/user-auth
+Branch: basher/user-auth
 Stories: 5 total (0 completed)
 
 Story Summary:
@@ -172,12 +172,12 @@ Story Summary:
   [P4] US-005: Add OAuth Support
 
 Ready for autonomous execution!
-Run: ~/.ralph/ralph.sh
+Run: ~/.basher/basher.sh
 ```
 
 3. Also initialize the progress file if it doesn't exist:
 
-Create `./ralph/progress.txt`:
+Create `./basher/progress.txt`:
 ```markdown
 # Progress Log - [project-name]
 
@@ -188,7 +188,7 @@ Branch: [branch-name]
 <!-- Patterns discovered during implementation will be added here -->
 
 ## Iteration Log
-<!-- Each Ralph iteration will append its progress here -->
+<!-- Each Basher iteration will append its progress here -->
 ```
 
 ## Error Handling
@@ -207,5 +207,5 @@ Cannot convert PRD - issues found:
 2. US-003 has no acceptance criteria
 3. US-005 has no priority specified
 
-Please fix these issues in ./ralph/prd.md and run /ralph-convert again.
+Please fix these issues in ./basher/prd.md and run /basher-convert again.
 ```

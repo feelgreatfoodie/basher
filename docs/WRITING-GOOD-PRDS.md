@@ -1,6 +1,6 @@
-# Writing Good PRDs for Ralph
+# Writing Good PRDs for Basher
 
-The quality of Ralph's output depends heavily on the quality of your Product Requirements Document. This guide will help you write PRDs that lead to successful autonomous implementation.
+The quality of Basher's output depends heavily on the quality of your Product Requirements Document. This guide will help you write PRDs that lead to successful autonomous implementation.
 
 ---
 
@@ -316,7 +316,7 @@ Use the validation middleware pattern from existing code.
 [Continue for remaining stories...]
 
 ## Git Branch
-**Branch Name:** `ralph/task-manager-api`
+**Branch Name:** `basher/task-manager-api`
 ```
 
 ---
@@ -345,7 +345,7 @@ Use the validation middleware pattern from existing code.
 
 ---
 
-## Checklist Before Running Ralph
+## Checklist Before Running Basher
 
 Before converting your PRD to JSON, verify:
 

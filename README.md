@@ -1,14 +1,14 @@
-# Ralph for Claude Code
+# Basher for Claude Code
 
 > **Build complete applications autonomously using AI — from meeting notes to working code.**
 
-Ralph is an automation system that runs Claude Code (Anthropic's AI coding assistant) repeatedly to implement entire software projects without manual intervention. You describe what you want to build, and Ralph handles the rest.
+Basher is an automation system that runs Claude Code (Anthropic's AI coding assistant) repeatedly to implement entire software projects without manual intervention. You describe what you want to build, and Basher handles the rest.
 
 ---
 
 ## Table of Contents
 
-1. [What is Ralph?](#what-is-ralph)
+1. [What is Basher?](#what-is-basher)
 2. [How It Works](#how-it-works)
 3. [Prerequisites](#prerequisites)
 4. [Installation](#installation)
@@ -22,18 +22,18 @@ Ralph is an automation system that runs Claude Code (Anthropic's AI coding assis
 
 ---
 
-## What is Ralph?
+## What is Basher?
 
 Imagine you have a meeting where your team discusses a new feature. Someone takes notes. Normally, a developer would then spend hours or days turning those notes into working code.
 
-**Ralph changes this.**
+**Basher changes this.**
 
-With Ralph, you:
+With Basher, you:
 1. Paste your meeting notes into a file
 2. Run a few commands
-3. Walk away while Ralph builds your application
+3. Walk away while Basher builds your application
 
-Ralph breaks your project into small, manageable tasks and completes them one by one — writing code, running tests, fixing errors, and committing changes to git. Each task is done with a fresh perspective, preventing the AI from getting confused or making compounding mistakes.
+Basher breaks your project into small, manageable tasks and completes them one by one — writing code, running tests, fixing errors, and committing changes to git. Each task is done with a fresh perspective, preventing the AI from getting confused or making compounding mistakes.
 
 ### Key Benefits
 
@@ -68,7 +68,7 @@ Ralph breaks your project into small, manageable tasks and completes them one by
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                                                                 │
-│   🔄 JSON Conversion (claude /ralph-convert)                    │
+│   🔄 JSON Conversion (claude /basher-convert)                   │
 │                                                                 │
 │   Creates machine-readable task list                            │
 │                                                                 │
@@ -77,7 +77,7 @@ Ralph breaks your project into small, manageable tasks and completes them one by
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                                                                 │
-│   🤖 Autonomous Execution (ralph.sh)                            │
+│   🤖 Autonomous Execution (basher.sh)                           │
 │                                                                 │
 │   For each task:                                                │
 │   ├── Start fresh Claude instance                               │
@@ -108,7 +108,7 @@ The key innovation is that **each task runs with fresh context**.
 
 When you use AI tools manually for a long time, they can get confused — mixing up old code with new, forgetting what was changed, or making the same mistake repeatedly.
 
-Ralph avoids this by:
+Basher avoids this by:
 - Starting a completely new Claude instance for each task
 - Forcing all important information to be written to files
 - Letting each instance read the current state fresh
@@ -119,11 +119,11 @@ This means task #10 is just as accurate as task #1.
 
 ## Prerequisites
 
-Before installing Ralph, you'll need a few things set up on your computer.
+Before installing Basher, you'll need a few things set up on your computer.
 
 ### 1. Claude Code CLI
 
-Claude Code is Anthropic's command-line AI coding assistant. Ralph uses it to do the actual coding work.
+Claude Code is Anthropic's command-line AI coding assistant. Basher uses it to do the actual coding work.
 
 **Installation:**
 1. Visit [claude.ai/download](https://claude.ai/download) or the official documentation
@@ -139,7 +139,7 @@ Follow the prompts to log in with your Anthropic account.
 
 ### 2. Git
 
-Git tracks changes to your code. Ralph uses it to save progress after each task.
+Git tracks changes to your code. Basher uses it to save progress after each task.
 
 **Check if installed:**
 ```bash
@@ -173,17 +173,17 @@ For reviewing and editing files:
 Open your terminal and run:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/feelgreatfoodie/ralph-claude-code/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/feelgreatfoodie/basher/main/install.sh | bash
 ```
 
-This downloads and sets up Ralph automatically.
+This downloads and sets up Basher automatically.
 
 ### Option B: Manual Installation
 
 1. **Clone this repository:**
    ```bash
-   git clone https://github.com/feelgreatfoodie/ralph-claude-code.git
-   cd ralph-claude-code
+   git clone https://github.com/feelgreatfoodie/basher.git
+   cd basher
    ```
 
 2. **Run the installer:**
@@ -191,31 +191,31 @@ This downloads and sets up Ralph automatically.
    ./install.sh
    ```
 
-3. **Add Ralph to your PATH** (so you can run it from anywhere):
+3. **Add Basher to your PATH** (so you can run it from anywhere):
 
    For **Zsh** (default on Mac):
    ```bash
-   echo 'export PATH="$HOME/.ralph:$PATH"' >> ~/.zshrc
+   echo 'export PATH="$HOME/.basher:$PATH"' >> ~/.zshrc
    source ~/.zshrc
    ```
 
    For **Bash**:
    ```bash
-   echo 'export PATH="$HOME/.ralph:$PATH"' >> ~/.bashrc
+   echo 'export PATH="$HOME/.basher:$PATH"' >> ~/.bashrc
    source ~/.bashrc
    ```
 
 4. **Verify installation:**
    ```bash
-   ls ~/.ralph
+   ls ~/.basher
    ```
-   You should see files like `ralph.sh`, `prompt.md`, etc.
+   You should see files like `basher.sh`, `prompt.md`, etc.
 
 ---
 
 ## Quick Start Guide
 
-Here's the fastest way to get Ralph running on a new project:
+Here's the fastest way to get Basher running on a new project:
 
 ### Step 1: Create or Navigate to Your Project
 
@@ -228,17 +228,17 @@ cd my-awesome-app
 git init
 ```
 
-### Step 2: Initialize Ralph
+### Step 2: Initialize Basher
 
 ```bash
-~/.ralph/ralph-init.sh
+~/.basher/basher-init.sh
 ```
 
-This creates a `./ralph/` folder in your project with configuration files.
+This creates a `./basher/` folder in your project with configuration files.
 
 ### Step 3: Add Your Feature Description
 
-Open `./ralph/transcript.txt` in your text editor and replace the placeholder with your feature description or meeting notes.
+Open `./basher/transcript.txt` in your text editor and replace the placeholder with your feature description or meeting notes.
 
 **Example:**
 ```
@@ -268,26 +268,26 @@ Then type:
 /prd
 ```
 
-Claude will read your notes and generate a structured Product Requirements Document at `./ralph/prd.md`. Review it to make sure it captured your intent.
+Claude will read your notes and generate a structured Product Requirements Document at `./basher/prd.md`. Review it to make sure it captured your intent.
 
 ### Step 5: Convert to JSON
 
 Still in Claude Code, type:
 ```
-/ralph-convert
+/basher-convert
 ```
 
-This creates `./ralph/prd.json` — the machine-readable task list that Ralph will execute.
+This creates `./basher/prd.json` — the machine-readable task list that Basher will execute.
 
-### Step 6: Run Ralph!
+### Step 6: Run Basher!
 
 Exit Claude Code (type `exit` or press Ctrl+C), then run:
 
 ```bash
-~/.ralph/ralph.sh
+~/.basher/basher.sh
 ```
 
-**That's it!** Ralph will now work through each task autonomously. You can watch the progress in your terminal, or come back later to see the finished result.
+**That's it!** Basher will now work through each task autonomously. You can watch the progress in your terminal, or come back later to see the finished result.
 
 ---
 
@@ -335,17 +335,17 @@ cd task-manager-api
 # Initialize git
 git init
 
-# Initialize Ralph
-~/.ralph/ralph-init.sh
+# Initialize Basher
+~/.basher/basher-init.sh
 ```
 
 Output:
 ```
 ╔══════════════════════════════════════════════════════════════╗
-║            Ralph Init - Project Setup                        ║
+║            Basher Init - Project Setup                       ║
 ╚══════════════════════════════════════════════════════════════╝
 
-[init] Creating ./ralph directory...
+[init] Creating ./basher directory...
 [init] Creating configuration...
 [init] Creating progress.txt...
 [init] Creating transcript placeholder...
@@ -353,13 +353,13 @@ Output:
 [init] Could not auto-detect tech stack
 
 ════════════════════════════════════════════════════════════════
-Ralph initialized for: task-manager-api
+Basher initialized for: task-manager-api
 ════════════════════════════════════════════════════════════════
 ```
 
 #### 2. Add Meeting Notes
 
-Open `./ralph/transcript.txt` and paste in your meeting notes (the ones above).
+Open `./basher/transcript.txt` and paste in your meeting notes (the ones above).
 
 #### 3. Generate PRD
 
@@ -372,7 +372,7 @@ Inside Claude Code:
 /prd
 ```
 
-Claude reads your transcript and creates `./ralph/prd.md`:
+Claude reads your transcript and creates `./basher/prd.md`:
 
 ```markdown
 # Task Manager API - Product Requirements Document
@@ -394,7 +394,7 @@ with in-memory storage.
 
 #### 4. Review the PRD
 
-Open `./ralph/prd.md` and review it. Make sure:
+Open `./basher/prd.md` and review it. Make sure:
 - All features are captured
 - Stories are in the right order (dependencies first)
 - Nothing important is missing
@@ -405,16 +405,16 @@ Edit if needed!
 
 In Claude Code:
 ```
-/ralph-convert
+/basher-convert
 ```
 
-This creates `./ralph/prd.json`. You'll see a summary:
+This creates `./basher/prd.json`. You'll see a summary:
 
 ```
-PRD converted to JSON: ./ralph/prd.json
+PRD converted to JSON: ./basher/prd.json
 
 Project: task-manager-api
-Branch: ralph/task-manager-api
+Branch: basher/task-manager-api
 Stories: 7 total (0 completed)
 
 Story Summary:
@@ -427,31 +427,31 @@ Story Summary:
   [P3] US-007: Add test suite
 ```
 
-#### 6. Exit Claude and Run Ralph
+#### 6. Exit Claude and Run Basher
 
 ```bash
 exit  # or Ctrl+C to leave Claude Code
-~/.ralph/ralph.sh
+~/.basher/basher.sh
 ```
 
 Output:
 ```
 ╔══════════════════════════════════════════════════════════════╗
-║          Ralph for Claude Code - Autonomous Agent Loop       ║
+║          Basher for Claude Code - Autonomous Agent Loop      ║
 ╚══════════════════════════════════════════════════════════════╝
 
-[ralph] Using PRD: ./ralph/prd.json
-[ralph] Initialized progress.txt
-[ralph] Creating new branch: ralph/task-manager-api from main
-[ralph] Stories remaining: 7
+[basher] Using PRD: ./basher/prd.json
+[basher] Initialized progress.txt
+[basher] Creating new branch: basher/task-manager-api from main
+[basher] Stories remaining: 7
 
-[ralph] ══════════════════════════════════════════════════════════
-[ralph] ITERATION 1 / 20
-[ralph] ══════════════════════════════════════════════════════════
-[ralph] Running Claude iteration...
+[basher] ══════════════════════════════════════════════════════════
+[basher] ITERATION 1 / 20
+[basher] ══════════════════════════════════════════════════════════
+[basher] Running Claude iteration...
 ```
 
-Ralph will now:
+Basher will now:
 1. Pick the first task (US-001)
 2. Implement it
 3. Run quality checks
@@ -463,11 +463,11 @@ This continues until all tasks are done!
 
 #### 7. Check the Results
 
-When Ralph finishes:
+When Basher finishes:
 ```
-[ralph] ══════════════════════════════════════════════════════════
-[ralph] RALPH COMPLETE - All stories implemented!
-[ralph] ══════════════════════════════════════════════════════════
+[basher] ══════════════════════════════════════════════════════════
+[basher] BASHER COMPLETE - All stories implemented!
+[basher] ══════════════════════════════════════════════════════════
 ```
 
 Your project now has:
@@ -490,7 +490,7 @@ npm start
 
 ## Configuration Options
 
-Ralph's behavior can be customized through `./ralph/ralph.config.json`.
+Basher's behavior can be customized through `./basher/basher.config.json`.
 
 ### Full Configuration Reference
 
@@ -501,7 +501,7 @@ Ralph's behavior can be customized through `./ralph/ralph.config.json`.
   "git": {
     "strategy": "single-branch",
     "baseBranch": "main",
-    "branchPrefix": "ralph/"
+    "branchPrefix": "basher/"
   },
 
   "quality": {
@@ -539,17 +539,17 @@ The name of your project. Used for branch names and logging.
 "git": {
   "strategy": "single-branch",
   "baseBranch": "main",
-  "branchPrefix": "ralph/"
+  "branchPrefix": "basher/"
 }
 ```
 
-- **strategy**: How Ralph handles git branches
+- **strategy**: How Basher handles git branches
   - `"single-branch"`: All tasks on one branch (recommended)
   - `"branch-per-story"`: Each task gets its own branch
 
-- **baseBranch**: The branch to create the Ralph branch from (usually `main` or `master`)
+- **baseBranch**: The branch to create the Basher branch from (usually `main` or `master`)
 
-- **branchPrefix**: Prefix for Ralph's branch names (e.g., `ralph/my-feature`)
+- **branchPrefix**: Prefix for Basher's branch names (e.g., `basher/my-feature`)
 
 #### Quality Gates
 
@@ -565,7 +565,7 @@ The name of your project. Used for branch names and logging.
 }
 ```
 
-- **autoDetect**: If `true`, Ralph will automatically detect your project type and use appropriate commands
+- **autoDetect**: If `true`, Basher will automatically detect your project type and use appropriate commands
 
 - **commands**: Override specific commands (set to `null` for auto-detection):
   ```json
@@ -586,7 +586,7 @@ The name of your project. Used for branch names and logging.
 }
 ```
 
-- **max**: Maximum number of iterations before Ralph stops (safety limit)
+- **max**: Maximum number of iterations before Basher stops (safety limit)
 - **delaySeconds**: Pause between iterations (helps with rate limits)
 
 #### Claude Settings
@@ -603,7 +603,7 @@ The name of your project. Used for branch names and logging.
 
 ### Tech Stack Auto-Detection
 
-Ralph automatically detects your project type and configures quality commands:
+Basher automatically detects your project type and configures quality commands:
 
 | Project Type | Detection | Lint | Typecheck | Test | Build |
 |-------------|-----------|------|-----------|------|-------|
@@ -616,25 +616,25 @@ Ralph automatically detects your project type and configures quality commands:
 
 ## Sharing with Teammates
 
-Ralph is designed to be easily shared. Here's how to get your teammates set up.
+Basher is designed to be easily shared. Here's how to get your teammates set up.
 
 ### Creating a Portable Package
 
 Run this command to create a shareable file:
 
 ```bash
-~/.ralph/package.sh
+~/.basher/package.sh
 ```
 
-This creates `ralph-portable.tar.gz` — a single file containing everything needed.
+This creates `basher-portable.tar.gz` — a single file containing everything needed.
 
 ### Teammate Installation
 
-Send the `ralph-portable.tar.gz` file to your teammate. They should:
+Send the `basher-portable.tar.gz` file to your teammate. They should:
 
 1. **Extract the package:**
    ```bash
-   tar -xzf ralph-portable.tar.gz -C ~/
+   tar -xzf basher-portable.tar.gz -C ~/
    ```
 
 2. **Install Claude Code CLI** (if they haven't already):
@@ -643,34 +643,34 @@ Send the `ralph-portable.tar.gz` file to your teammate. They should:
 
 3. **Add to PATH:**
    ```bash
-   echo 'export PATH="$HOME/.ralph:$PATH"' >> ~/.zshrc
+   echo 'export PATH="$HOME/.basher:$PATH"' >> ~/.zshrc
    source ~/.zshrc
    ```
 
 4. **Verify:**
    ```bash
-   ~/.ralph/ralph.sh --help
+   ~/.basher/basher.sh --help
    ```
 
-**Important:** Each person needs their own Claude Code credentials. Ralph doesn't store or share API keys.
+**Important:** Each person needs their own Claude Code credentials. Basher doesn't store or share API keys.
 
-### Version Control for Ralph Itself
+### Version Control for Basher Itself
 
-Since Ralph is just files, you can version control it:
+Since Basher is just files, you can version control it:
 
 ```bash
-cd ~/.ralph
+cd ~/.basher
 git init
 git add .
-git commit -m "Initial Ralph setup"
-git remote add origin git@github.com:your-org/ralph-config.git
+git commit -m "Initial Basher setup"
+git remote add origin git@github.com:your-org/basher-config.git
 git push -u origin main
 ```
 
-Now teammates can clone your organization's Ralph configuration:
+Now teammates can clone your organization's Basher configuration:
 
 ```bash
-git clone git@github.com:your-org/ralph-config.git ~/.ralph
+git clone git@github.com:your-org/basher-config.git ~/.basher
 ```
 
 ---
@@ -688,7 +688,7 @@ git clone git@github.com:your-org/ralph-config.git ~/.ralph
 
 ### "Not in a git repository"
 
-**Problem:** Ralph requires git to track changes.
+**Problem:** Basher requires git to track changes.
 
 **Solution:**
 ```bash
@@ -697,22 +697,22 @@ git add .
 git commit -m "Initial commit"
 ```
 
-### Ralph stops after a few iterations
+### Basher stops after a few iterations
 
 **Problem:** A task might be failing repeatedly.
 
 **Solution:**
-1. Check `./ralph/progress.txt` for error messages
+1. Check `./basher/progress.txt` for error messages
 2. Look at the last few git commits: `git log --oneline -5`
-3. The task might be too large — edit `./ralph/prd.json` to split it
+3. The task might be too large — edit `./basher/prd.json` to split it
 
 ### "Max iterations reached"
 
-**Problem:** Ralph hit the safety limit without completing all tasks.
+**Problem:** Basher hit the safety limit without completing all tasks.
 
 **Solution:**
-1. Check how many tasks remain: look at `./ralph/prd.json`
-2. Increase the limit: `~/.ralph/ralph.sh 50`
+1. Check how many tasks remain: look at `./basher/prd.json`
+2. Increase the limit: `~/.basher/basher.sh 50`
 3. Or investigate why tasks aren't completing (check `progress.txt`)
 
 ### Tests keep failing
@@ -729,7 +729,7 @@ git commit -m "Initial commit"
 **Problem:** A task is too complex for a single Claude session.
 
 **Solution:**
-Split the task into smaller pieces in `./ralph/prd.json`:
+Split the task into smaller pieces in `./basher/prd.json`:
 - Instead of "Build user authentication"
 - Use: "Create user model", "Add login endpoint", "Add registration endpoint", etc.
 
@@ -739,9 +739,9 @@ If you need to manually fix code and continue:
 
 1. Make your fixes
 2. Commit them: `git add . && git commit -m "Manual fix: description"`
-3. Run Ralph again: `~/.ralph/ralph.sh`
+3. Run Basher again: `~/.basher/basher.sh`
 
-Ralph will pick up where it left off.
+Basher will pick up where it left off.
 
 ---
 
@@ -749,14 +749,14 @@ Ralph will pick up where it left off.
 
 ### Q: How much does this cost?
 
-Ralph uses Claude Code, which requires an Anthropic account. Check [Anthropic's pricing](https://www.anthropic.com/pricing) for current rates. Costs depend on:
+Basher uses Claude Code, which requires an Anthropic account. Check [Anthropic's pricing](https://www.anthropic.com/pricing) for current rates. Costs depend on:
 - Number of tasks
 - Complexity of each task
 - Which model you use (Sonnet is cheaper than Opus)
 
 ### Q: Can I use this for any programming language?
 
-Yes! Ralph is language-agnostic. It works with:
+Yes! Basher is language-agnostic. It works with:
 - JavaScript/TypeScript
 - Python
 - Rust
@@ -767,7 +767,7 @@ Yes! Ralph is language-agnostic. It works with:
 
 Just make sure your quality gate commands are configured correctly.
 
-### Q: What if I don't like what Ralph built?
+### Q: What if I don't like what Basher built?
 
 You have full control:
 - Review each commit with `git log` and `git diff`
@@ -775,37 +775,37 @@ You have full control:
 - Edit the PRD and run again
 - Make manual changes anytime
 
-### Q: Can I run Ralph on an existing project?
+### Q: Can I run Basher on an existing project?
 
 Absolutely! Just:
 1. Navigate to your project
-2. Run `~/.ralph/ralph-init.sh`
+2. Run `~/.basher/basher-init.sh`
 3. Create a PRD for the new features you want
-4. Run Ralph
+4. Run Basher
 
 It will create a new branch and won't touch your main code until you merge.
 
-### Q: How do I stop Ralph mid-run?
+### Q: How do I stop Basher mid-run?
 
-Press `Ctrl+C` in the terminal. Ralph will stop after the current iteration completes. Your progress is saved — you can resume later.
+Press `Ctrl+C` in the terminal. Basher will stop after the current iteration completes. Your progress is saved — you can resume later.
 
 ### Q: Is my code sent to Anthropic?
 
-Yes, Ralph uses Claude Code, which sends your code to Anthropic's servers for processing. Review [Anthropic's privacy policy](https://www.anthropic.com/privacy) for details. Don't use Ralph with code you can't share with Anthropic.
+Yes, Basher uses Claude Code, which sends your code to Anthropic's servers for processing. Review [Anthropic's privacy policy](https://www.anthropic.com/privacy) for details. Don't use Basher with code you can't share with Anthropic.
 
-### Q: Can multiple people run Ralph on the same repo?
+### Q: Can multiple people run Basher on the same repo?
 
 Yes, but coordinate:
 - Each person should use a different branch
 - Or work on different features
 - Merge carefully to avoid conflicts
 
-### Q: What's the largest project Ralph can handle?
+### Q: What's the largest project Basher can handle?
 
-Ralph works best with focused features. For large projects:
+Basher works best with focused features. For large projects:
 - Break work into phases
 - Create separate PRDs for each phase
-- Run Ralph for each phase sequentially
+- Run Basher for each phase sequentially
 
 ---
 
@@ -857,9 +857,9 @@ MIT License - see [LICENSE](LICENSE) for details.
 ## Getting Help
 
 - **Documentation**: You're reading it!
-- **Issues**: [GitHub Issues](https://github.com/feelgreatfoodie/ralph-claude-code/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/feelgreatfoodie/ralph-claude-code/discussions)
+- **Issues**: [GitHub Issues](https://github.com/feelgreatfoodie/basher/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/feelgreatfoodie/basher/discussions)
 
 ---
 
-Happy building! 🚀
+Happy building!

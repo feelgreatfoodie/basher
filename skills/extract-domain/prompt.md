@@ -27,7 +27,7 @@ domains/[domain-name]/
 ├── patterns.md         # Implementation patterns with annotated code
 ├── deep-dive.md        # Educational: WHY these patterns work
 ├── questions.md        # 15-25 planning questions
-├── prd-fragment.md     # Ralph-compatible user stories
+├── prd-fragment.md     # Basher-compatible user stories
 └── templates/          # Reusable code snippets
     └── [template-files]
 ```
@@ -78,7 +78,7 @@ For each significant pattern found:
 - [Patterns](./patterns.md) - Implementation patterns
 - [Deep Dive](./deep-dive.md) - Why these patterns work
 - [Questions](./questions.md) - Planning checklist
-- [PRD Fragment](./prd-fragment.md) - User stories for Ralph
+- [PRD Fragment](./prd-fragment.md) - User stories for Basher
 
 ## Key Concepts
 - **[Concept 1]**: [Brief explanation]
