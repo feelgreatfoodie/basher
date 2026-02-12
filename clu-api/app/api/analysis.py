@@ -12,12 +12,20 @@ from app.schemas import (
     AnalysisStatusResponse,
     AnalysisResultsResponse,
 )
+from app.services.extraction_templates import list_templates as list_extraction_templates
 from app.services.incremental import run_incremental_analysis
 from app.services.pipeline import run_analysis_pipeline
 from app.services.prd_generator import generate_prd as generate_prd_service
 from app.services.recovery import recover_analysis
 
 router = APIRouter(prefix="/projects/{project_id}", tags=["analysis"])
+templates_router = APIRouter(tags=["templates"])
+
+
+@templates_router.get("/templates/extraction")
+def list_templates():
+    """List available extraction templates."""
+    return {"templates": list_extraction_templates()}
 
 
 def _get_project(db: Session, project_id: str, tenant_id: str | None) -> Project:
@@ -62,8 +70,10 @@ def trigger_analysis(
     db.refresh(analysis)
 
     generate_prd_flag = data.generate_prd if data else False
+    extraction_template = data.extraction_template if data else None
     background_tasks.add_task(
-        run_analysis_pipeline, analysis.id, project_id, generate_prd_flag
+        run_analysis_pipeline, analysis.id, project_id, generate_prd_flag,
+        extraction_template=extraction_template,
     )
     return analysis
 

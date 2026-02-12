@@ -29,6 +29,7 @@ def extract_transcript(
     content: str,
     transcript_type: str,
     word_count: int,
+    template_name: str | None = None,
 ) -> dict:
     """Extract structured data from a single transcript using Claude."""
     # Use Opus for large transcripts (>50K words), Sonnet otherwise
@@ -42,7 +43,9 @@ def extract_transcript(
 
     client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
 
-    user_prompt = build_extraction_prompt(filename, content, transcript_type, word_count)
+    user_prompt = build_extraction_prompt(
+        filename, content, transcript_type, word_count, template_name=template_name
+    )
 
     logger.info("Extracting %s (%d words) with %s", filename, word_count, model)
 

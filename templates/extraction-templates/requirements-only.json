@@ -1,0 +1,16 @@
+{
+  "name": "requirements-only",
+  "description": "Requirements-focused extraction. Best for PRD generation and spec analysis.",
+  "sections": [
+    "requirements",
+    "technicalConstraints",
+    "openQuestions"
+  ],
+  "guidelines": "Focus exclusively on requirements, technical constraints, and open questions. Categorize requirements by type (functional/non-functional/constraint) and priority. Include supporting quotes for traceability.",
+  "schema": {
+    "source": { "name": "<filename>", "type": "<type>", "wordCount": "<count>" },
+    "requirements": [{ "description": "", "type": "functional|non-functional|constraint", "priority": "critical|high|medium|low", "mentionedBy": [], "supportingQuotes": [], "category": "auth|data|api|ui|infrastructure|security|performance|other" }],
+    "technicalConstraints": [{ "constraint": "", "explicit": true, "source": "", "supportingQuote": "" }],
+    "openQuestions": [{ "question": "", "raisedBy": "", "context": "", "suggestedAnswers": [] }]
+  }
+}

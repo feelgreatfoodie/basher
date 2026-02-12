@@ -1,0 +1,18 @@
+{
+  "name": "decisions-only",
+  "description": "Decisions-focused extraction. Best for decision logs and governance tracking.",
+  "sections": [
+    "participants",
+    "decisions",
+    "actionItems",
+    "deferredItems"
+  ],
+  "guidelines": "Focus on decisions and their outcomes. Track who decided what, confidence levels, and any deferred items. Extract action items that result from decisions. Include supporting quotes for accountability.",
+  "schema": {
+    "source": { "name": "<filename>", "type": "<type>", "wordCount": "<count>" },
+    "participants": [{ "name": "Full Name", "role": "PM|Engineer|Designer|Stakeholder|Executive|Unknown", "aliases": [], "inferredFromContext": false }],
+    "decisions": [{ "what": "description", "decidedBy": [], "confidence": "high|medium|low", "supportingQuotes": [], "context": "", "revisits": false }],
+    "actionItems": [{ "action": "description", "owner": "Name or Unassigned", "deadline": null, "status": "open|in-progress|done", "supportingQuote": "" }],
+    "deferredItems": [{ "item": "", "deferredTo": "", "reason": "", "supportingQuote": "" }]
+  }
+}

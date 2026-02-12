@@ -1,0 +1,26 @@
+{
+  "name": "default",
+  "description": "Full extraction — all categories. Best for comprehensive analysis.",
+  "sections": [
+    "participants",
+    "decisions",
+    "actionItems",
+    "requirements",
+    "technicalConstraints",
+    "openQuestions",
+    "risks",
+    "deferredItems"
+  ],
+  "guidelines": "Extract EVERYTHING across all categories. Be exhaustive.",
+  "schema": {
+    "source": { "name": "<filename>", "type": "<type>", "wordCount": "<count>" },
+    "participants": [{ "name": "Full Name", "role": "PM|Engineer|Designer|Stakeholder|Executive|Unknown", "aliases": [], "inferredFromContext": false }],
+    "decisions": [{ "what": "description", "decidedBy": [], "confidence": "high|medium|low", "supportingQuotes": [], "context": "", "revisits": false }],
+    "actionItems": [{ "action": "description", "owner": "Name or Unassigned", "deadline": null, "status": "open|in-progress|done", "supportingQuote": "" }],
+    "requirements": [{ "description": "", "type": "functional|non-functional|constraint", "priority": "critical|high|medium|low", "mentionedBy": [], "supportingQuotes": [], "category": "auth|data|api|ui|infrastructure|security|performance|other" }],
+    "technicalConstraints": [{ "constraint": "", "explicit": true, "source": "", "supportingQuote": "" }],
+    "openQuestions": [{ "question": "", "raisedBy": "", "context": "", "suggestedAnswers": [] }],
+    "risks": [{ "risk": "", "flaggedBy": "", "severity": "critical|high|medium|low", "mitigation": null }],
+    "deferredItems": [{ "item": "", "deferredTo": "", "reason": "", "supportingQuote": "" }]
+  }
+}

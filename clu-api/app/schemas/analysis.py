@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 class AnalysisTriggerRequest(BaseModel):
     generate_prd: bool = False
+    extraction_template: str | None = None
 
 
 class AnalysisResponse(BaseModel):

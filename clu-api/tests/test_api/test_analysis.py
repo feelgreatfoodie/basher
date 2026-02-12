@@ -189,3 +189,33 @@ def test_trigger_incremental_no_previous_analysis(client, db):
     response = client.post(f"/api/v1/projects/{project_id}/analyze/incremental")
     assert response.status_code == 409
     assert "Run a full analysis first" in response.json()["detail"]
+
+
+@patch("app.api.analysis.run_analysis_pipeline")
+def test_trigger_analysis_with_template(mock_pipeline, client, db):
+    """Analysis can be triggered with an extraction template."""
+    project = client.post("/api/v1/projects", json={"name": "Test"}).json()
+    project_id = project["id"]
+
+    response = client.post(
+        f"/api/v1/projects/{project_id}/analyze",
+        json={"extraction_template": "requirements-only"},
+    )
+    assert response.status_code == 202
+
+    # Verify the pipeline was called with the template
+    mock_pipeline.assert_called_once()
+    call_kwargs = mock_pipeline.call_args
+    assert call_kwargs[1]["extraction_template"] == "requirements-only"
+
+
+def test_list_extraction_templates(client):
+    """GET /templates/extraction returns available templates."""
+    response = client.get("/api/v1/templates/extraction")
+    assert response.status_code == 200
+    data = response.json()
+    assert "templates" in data
+    names = [t["name"] for t in data["templates"]]
+    assert "default" in names
+    assert "requirements-only" in names
+    assert "decisions-only" in names

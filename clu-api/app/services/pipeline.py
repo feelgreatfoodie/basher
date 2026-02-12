@@ -20,7 +20,8 @@ logger = logging.getLogger(__name__)
 
 
 def run_analysis_pipeline(analysis_id: str, project_id: str,
-                          generate_prd_flag: bool = False) -> None:
+                          generate_prd_flag: bool = False,
+                          extraction_template: str | None = None) -> None:
     """Run the full extraction + synthesis pipeline for a project.
 
     Designed to be called from FastAPI BackgroundTasks.
@@ -28,7 +29,8 @@ def run_analysis_pipeline(analysis_id: str, project_id: str,
     """
     db: Session = SessionLocal()
     try:
-        _execute_pipeline(db, analysis_id, project_id, generate_prd_flag)
+        _execute_pipeline(db, analysis_id, project_id, generate_prd_flag,
+                          extraction_template=extraction_template)
     except Exception as e:
         logger.exception("Analysis pipeline failed for %s", analysis_id)
         analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
@@ -43,7 +45,8 @@ def run_analysis_pipeline(analysis_id: str, project_id: str,
 
 def _extract_single(transcript_id: str, filename: str, content: str,
                      transcript_type: str, word_count: int,
-                     tenant_id: str | None) -> dict:
+                     tenant_id: str | None,
+                     template_name: str | None = None) -> dict:
     """Extract a single transcript. Runs in a thread pool worker.
 
     Returns dict with extraction result and metadata needed to persist it.
@@ -54,6 +57,7 @@ def _extract_single(transcript_id: str, filename: str, content: str,
         content=content,
         transcript_type=transcript_type,
         word_count=word_count,
+        template_name=template_name,
     )
     return {
         "transcript_id": transcript_id,
@@ -65,7 +69,8 @@ def _extract_single(transcript_id: str, filename: str, content: str,
 
 
 def _execute_pipeline(db: Session, analysis_id: str, project_id: str,
-                       generate_prd_flag: bool = False) -> None:
+                       generate_prd_flag: bool = False,
+                       extraction_template: str | None = None) -> None:
     """Core pipeline logic with concurrent extraction."""
     analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
     if not analysis:
@@ -110,6 +115,7 @@ def _execute_pipeline(db: Session, analysis_id: str, project_id: str,
                     _extract_single,
                     t.id, t.filename, t.content,
                     t.transcript_type, t.word_count, t.tenant_id,
+                    template_name=extraction_template,
                 ): t.filename
                 for t in pending
             }
