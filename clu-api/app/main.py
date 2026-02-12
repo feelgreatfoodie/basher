@@ -6,6 +6,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.router import api_router
 from app.config import settings
 from app.middleware.auth import AuthMiddleware
+from app.middleware.rate_limit import RateLimitMiddleware
+from app.middleware.tenant import TenantMiddleware
 
 
 @asynccontextmanager
@@ -20,8 +22,11 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Middleware stack (order matters: last added = first executed)
-# 1. CORS (outermost)
+# Middleware stack (last added = outermost = first to execute in Starlette)
+# Execution order: CORS → Auth → Tenant → RateLimit → Route handler
+app.add_middleware(RateLimitMiddleware)
+app.add_middleware(TenantMiddleware)
+app.add_middleware(AuthMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -29,8 +34,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-# 2. Authentication
-app.add_middleware(AuthMiddleware)
 
 
 app.include_router(api_router, prefix=settings.api_v1_prefix)

@@ -4,6 +4,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.dependencies import get_tenant_id
 from app.models import Project, Analysis, Transcript, Extraction
 from app.schemas import (
     AnalysisTriggerRequest,
@@ -17,18 +18,43 @@ from app.services.prd_generator import generate_prd as generate_prd_service
 router = APIRouter(prefix="/projects/{project_id}", tags=["analysis"])
 
 
+def _get_project(db: Session, project_id: str, tenant_id: str | None) -> Project:
+    """Look up a project scoped by tenant. Raises 404 if not found."""
+    query = db.query(Project).filter(Project.id == project_id)
+    if tenant_id:
+        query = query.filter(Project.tenant_id == tenant_id)
+    project = query.first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return project
+
+
+def _get_latest_analysis(
+    db: Session, project_id: str, tenant_id: str | None, status: str | None = None
+) -> Analysis:
+    """Look up the latest analysis for a project, scoped by tenant."""
+    query = db.query(Analysis).filter(Analysis.project_id == project_id)
+    if tenant_id:
+        query = query.filter(Analysis.tenant_id == tenant_id)
+    if status:
+        query = query.filter(Analysis.status == status)
+    analysis = query.order_by(Analysis.created_at.desc()).first()
+    if not analysis:
+        raise HTTPException(status_code=404, detail="No analysis found for this project")
+    return analysis
+
+
 @router.post("/analyze", response_model=AnalysisResponse, status_code=202)
 def trigger_analysis(
     project_id: str,
     background_tasks: BackgroundTasks,
     data: AnalysisTriggerRequest | None = None,
     db: Session = Depends(get_db),
+    tenant_id: str | None = Depends(get_tenant_id),
 ):
-    project = db.query(Project).filter(Project.id == project_id).first()
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
+    project = _get_project(db, project_id, tenant_id)
 
-    analysis = Analysis(project_id=project_id, status="pending", tenant_id=project.tenant_id)
+    analysis = Analysis(project_id=project_id, status="pending", tenant_id=tenant_id)
     db.add(analysis)
     db.commit()
     db.refresh(analysis)
@@ -41,46 +67,47 @@ def trigger_analysis(
 
 
 @router.get("/analysis/status", response_model=AnalysisStatusResponse)
-def get_analysis_status(project_id: str, db: Session = Depends(get_db)):
-    analysis = (
-        db.query(Analysis)
-        .filter(Analysis.project_id == project_id)
-        .order_by(Analysis.created_at.desc())
-        .first()
-    )
-    if not analysis:
-        raise HTTPException(status_code=404, detail="No analysis found for this project")
+def get_analysis_status(
+    project_id: str,
+    db: Session = Depends(get_db),
+    tenant_id: str | None = Depends(get_tenant_id),
+):
+    analysis = _get_latest_analysis(db, project_id, tenant_id)
     return analysis
 
 
 @router.get("/analysis/results", response_model=AnalysisResultsResponse)
-def get_analysis_results(project_id: str, db: Session = Depends(get_db)):
-    analysis = (
-        db.query(Analysis)
-        .filter(Analysis.project_id == project_id)
-        .order_by(Analysis.created_at.desc())
-        .first()
-    )
-    if not analysis:
-        raise HTTPException(status_code=404, detail="No analysis found for this project")
+def get_analysis_results(
+    project_id: str,
+    db: Session = Depends(get_db),
+    tenant_id: str | None = Depends(get_tenant_id),
+):
+    analysis = _get_latest_analysis(db, project_id, tenant_id)
     if analysis.status != "complete":
-        raise HTTPException(status_code=409, detail=f"Analysis status is '{analysis.status}', not complete")
+        raise HTTPException(
+            status_code=409,
+            detail=f"Analysis status is '{analysis.status}', not complete",
+        )
     return analysis
 
 
 @router.get("/analysis/confidence")
-def get_extraction_confidence(project_id: str, db: Session = Depends(get_db)):
+def get_extraction_confidence(
+    project_id: str,
+    db: Session = Depends(get_db),
+    tenant_id: str | None = Depends(get_tenant_id),
+):
     """Get confidence scores for all extractions in a project."""
-    project = db.query(Project).filter(Project.id == project_id).first()
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
+    _get_project(db, project_id, tenant_id)
 
-    extractions = (
+    query = (
         db.query(Extraction, Transcript.filename)
         .join(Transcript)
         .filter(Transcript.project_id == project_id)
-        .all()
     )
+    if tenant_id:
+        query = query.filter(Extraction.tenant_id == tenant_id)
+    extractions = query.all()
 
     if not extractions:
         raise HTTPException(status_code=404, detail="No extractions found for this project")
@@ -107,47 +134,48 @@ def get_extraction_confidence(project_id: str, db: Session = Depends(get_db)):
 
 
 @router.get("/analysis/{result_type}")
-def get_analysis_by_type(project_id: str, result_type: str, db: Session = Depends(get_db)):
+def get_analysis_by_type(
+    project_id: str,
+    result_type: str,
+    db: Session = Depends(get_db),
+    tenant_id: str | None = Depends(get_tenant_id),
+):
     valid_types = [
         "summary", "conflicts", "gaps", "decisions",
         "requirements", "stakeholders", "action-items",
     ]
     if result_type not in valid_types:
-        raise HTTPException(status_code=400, detail=f"Invalid result type. Must be one of: {valid_types}")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid result type. Must be one of: {valid_types}",
+        )
 
-    analysis = (
-        db.query(Analysis)
-        .filter(Analysis.project_id == project_id)
-        .order_by(Analysis.created_at.desc())
-        .first()
-    )
-    if not analysis:
-        raise HTTPException(status_code=404, detail="No analysis found for this project")
+    analysis = _get_latest_analysis(db, project_id, tenant_id)
     if analysis.status != "complete":
-        raise HTTPException(status_code=409, detail=f"Analysis status is '{analysis.status}', not complete")
+        raise HTTPException(
+            status_code=409,
+            detail=f"Analysis status is '{analysis.status}', not complete",
+        )
 
     results = json.loads(analysis.results_json) if analysis.results_json else {}
     section = results.get(result_type)
     if section is None:
-        raise HTTPException(status_code=404, detail=f"No '{result_type}' section in analysis results")
+        raise HTTPException(
+            status_code=404, detail=f"No '{result_type}' section in analysis results"
+        )
 
     return {"type": result_type, "data": section}
 
 
 @router.post("/prd", status_code=202)
-def generate_prd(project_id: str, db: Session = Depends(get_db)):
-    project = db.query(Project).filter(Project.id == project_id).first()
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
+def generate_prd(
+    project_id: str,
+    db: Session = Depends(get_db),
+    tenant_id: str | None = Depends(get_tenant_id),
+):
+    _get_project(db, project_id, tenant_id)
 
-    analysis = (
-        db.query(Analysis)
-        .filter(Analysis.project_id == project_id, Analysis.status == "complete")
-        .order_by(Analysis.created_at.desc())
-        .first()
-    )
-    if not analysis:
-        raise HTTPException(status_code=409, detail="No completed analysis found. Run analysis first.")
+    analysis = _get_latest_analysis(db, project_id, tenant_id, status="complete")
 
     results = json.loads(analysis.results_json) if analysis.results_json else {}
     prd_markdown = generate_prd_service(results)

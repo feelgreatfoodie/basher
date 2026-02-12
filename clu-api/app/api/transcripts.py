@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.dependencies import get_tenant_id
 from app.models import Project, Transcript
 from app.schemas import TranscriptResponse, TranscriptList
 
@@ -29,8 +30,12 @@ async def upload_transcript(
     project_id: str,
     file: UploadFile,
     db: Session = Depends(get_db),
+    tenant_id: str | None = Depends(get_tenant_id),
 ):
-    project = db.query(Project).filter(Project.id == project_id).first()
+    query = db.query(Project).filter(Project.id == project_id)
+    if tenant_id:
+        query = query.filter(Project.tenant_id == tenant_id)
+    project = query.first()
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
 
@@ -44,7 +49,7 @@ async def upload_transcript(
         content=content,
         transcript_type=transcript_type,
         word_count=word_count,
-        tenant_id=project.tenant_id,
+        tenant_id=tenant_id,
     )
     db.add(transcript)
     db.commit()
@@ -53,8 +58,15 @@ async def upload_transcript(
 
 
 @router.get("", response_model=TranscriptList)
-def list_transcripts(project_id: str, db: Session = Depends(get_db)):
-    project = db.query(Project).filter(Project.id == project_id).first()
+def list_transcripts(
+    project_id: str,
+    db: Session = Depends(get_db),
+    tenant_id: str | None = Depends(get_tenant_id),
+):
+    query = db.query(Project).filter(Project.id == project_id)
+    if tenant_id:
+        query = query.filter(Project.tenant_id == tenant_id)
+    project = query.first()
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
 
