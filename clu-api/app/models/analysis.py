@@ -15,6 +15,7 @@ class Analysis(Base):
     status: Mapped[str] = mapped_column(String(50), default="pending")
     results_json: Mapped[str | None] = mapped_column(Text)
     error_message: Mapped[str | None] = mapped_column(Text)
+    last_checkpoint: Mapped[str | None] = mapped_column(String(50))
     model_used: Mapped[str | None] = mapped_column(String(100))
     tenant_id: Mapped[str | None] = mapped_column(String(36), index=True)
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

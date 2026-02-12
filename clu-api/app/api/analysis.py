@@ -14,6 +14,7 @@ from app.schemas import (
 )
 from app.services.pipeline import run_analysis_pipeline
 from app.services.prd_generator import generate_prd as generate_prd_service
+from app.services.recovery import recover_analysis
 
 router = APIRouter(prefix="/projects/{project_id}", tags=["analysis"])
 
@@ -165,6 +166,38 @@ def get_analysis_by_type(
         )
 
     return {"type": result_type, "data": section}
+
+
+@router.post("/analysis/retry", status_code=202)
+def retry_failed_analysis(
+    project_id: str,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    tenant_id: str | None = Depends(get_tenant_id),
+):
+    """Retry the latest failed analysis, resuming from its last checkpoint."""
+    _get_project(db, project_id, tenant_id)
+
+    analysis = _get_latest_analysis(db, project_id, tenant_id)
+    if analysis.status != "failed":
+        raise HTTPException(
+            status_code=409,
+            detail=f"Latest analysis status is '{analysis.status}', not 'failed'",
+        )
+
+    if not analysis.last_checkpoint:
+        raise HTTPException(
+            status_code=409,
+            detail="Analysis has no checkpoint to resume from. Trigger a new analysis instead.",
+        )
+
+    background_tasks.add_task(recover_analysis, analysis.id)
+    return {
+        "id": analysis.id,
+        "status": "recovering",
+        "last_checkpoint": analysis.last_checkpoint,
+        "message": f"Resuming from checkpoint '{analysis.last_checkpoint}'",
+    }
 
 
 @router.post("/prd", status_code=202)

@@ -137,6 +137,9 @@ def _execute_pipeline(db: Session, analysis_id: str, project_id: str,
         error_summary = "; ".join(errors)
         raise RuntimeError(f"Extraction failed for {len(errors)} transcript(s): {error_summary}")
 
+    analysis.last_checkpoint = "extraction_complete"
+    db.commit()
+
     # Phase 1.5: Index extractions into ChromaDB for semantic search
     all_extractions = (
         db.query(Extraction)
@@ -157,6 +160,9 @@ def _execute_pipeline(db: Session, analysis_id: str, project_id: str,
     except Exception as e:
         logger.warning("ChromaDB indexing failed (non-fatal): %s", e)
 
+    analysis.last_checkpoint = "indexing_complete"
+    db.commit()
+
     # Phase 2: Synthesize all extractions
     analysis.status = "synthesizing"
     db.commit()
@@ -169,6 +175,7 @@ def _execute_pipeline(db: Session, analysis_id: str, project_id: str,
         prd_markdown = generate_prd(synthesis)
         synthesis["prd"] = prd_markdown
 
+    analysis.last_checkpoint = "synthesis_complete"
     analysis.status = "complete"
     analysis.results_json = json.dumps(synthesis)
     analysis.model_used = (

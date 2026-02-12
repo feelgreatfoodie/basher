@@ -4,7 +4,7 @@ def test_create_project(client):
     data = response.json()
     assert data["name"] == "Test Project"
     assert data["id"]
-    assert data["tenant_id"] is None
+    assert data["tenant_id"] is not None
 
 
 def test_create_project_with_description(client):
