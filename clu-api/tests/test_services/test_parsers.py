@@ -95,11 +95,12 @@ def test_detect_and_parse_docx(mock_parse_docx):
     mock_parse_docx.assert_called_once_with(b"PK\x03\x04 fake docx")
 
 
-@patch("app.services.parsers.pdf.fitz")
-def test_parse_pdf_extracts_pages(mock_fitz):
+def test_parse_pdf_extracts_pages():
     """Test PDF parser extracts text from multiple pages."""
+    import sys
     from app.services.parsers.pdf import parse_pdf
 
+    mock_fitz = MagicMock()
     mock_doc = MagicMock()
     mock_doc.__len__ = lambda self: 2
     mock_page1 = MagicMock()
@@ -109,18 +110,20 @@ def test_parse_pdf_extracts_pages(mock_fitz):
     mock_doc.load_page.side_effect = [mock_page1, mock_page2]
     mock_fitz.open.return_value = mock_doc
 
-    result = parse_pdf(b"%PDF-fake")
+    with patch.dict(sys.modules, {"fitz": mock_fitz}):
+        result = parse_pdf(b"%PDF-fake")
     assert "Page 1 content" in result
     assert "Page 2 content" in result
     mock_doc.close.assert_called_once()
 
 
-@patch("app.services.parsers.pdf.fitz")
-def test_parse_pdf_empty_raises(mock_fitz):
+def test_parse_pdf_empty_raises():
     """PDF with no extractable text should raise ValueError."""
+    import sys
     import pytest
     from app.services.parsers.pdf import parse_pdf
 
+    mock_fitz = MagicMock()
     mock_doc = MagicMock()
     mock_doc.__len__ = lambda self: 1
     mock_page = MagicMock()
@@ -128,5 +131,6 @@ def test_parse_pdf_empty_raises(mock_fitz):
     mock_doc.load_page.return_value = mock_page
     mock_fitz.open.return_value = mock_doc
 
-    with pytest.raises(ValueError, match="no extractable text"):
-        parse_pdf(b"%PDF-fake")
+    with patch.dict(sys.modules, {"fitz": mock_fitz}):
+        with pytest.raises(ValueError, match="no extractable text"):
+            parse_pdf(b"%PDF-fake")
