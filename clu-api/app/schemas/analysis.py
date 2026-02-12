@@ -24,8 +24,11 @@ class AnalysisResponse(BaseModel):
 class AnalysisStatusResponse(BaseModel):
     id: str
     status: str
+    error_message: str | None = None
     started_at: datetime | None
     completed_at: datetime | None
+
+    model_config = {"from_attributes": True}
 
 
 class AnalysisResultsResponse(BaseModel):
@@ -34,3 +37,5 @@ class AnalysisResultsResponse(BaseModel):
     status: str
     results_json: str | None
     completed_at: datetime | None
+
+    model_config = {"from_attributes": True}

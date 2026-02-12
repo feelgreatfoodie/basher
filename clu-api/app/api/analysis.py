@@ -33,7 +33,10 @@ def trigger_analysis(
     db.commit()
     db.refresh(analysis)
 
-    background_tasks.add_task(run_analysis_pipeline, analysis.id, project_id)
+    generate_prd_flag = data.generate_prd if data else False
+    background_tasks.add_task(
+        run_analysis_pipeline, analysis.id, project_id, generate_prd_flag
+    )
     return analysis
 
 
