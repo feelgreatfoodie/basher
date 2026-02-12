@@ -9,6 +9,8 @@ services:
       - CHROMADB_HOST=chromadb
       - CHROMADB_PORT=8000
       - REDIS_URL=redis://redis:6379/0
+      - LOG_JSON=false
+      - LOG_LEVEL=INFO
     depends_on:
       db:
         condition: service_healthy

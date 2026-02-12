@@ -65,7 +65,7 @@ substitutions:
   _DATABASE_URL: ""
   _REDIS_URL: ""
   _CHROMADB_HOST: ""
-  _CHROMADB_PORT: "8000"
+  _CHROMADB_PORT: "8001"
 
 images:
   - "gcr.io/$PROJECT_ID/clu-api:$COMMIT_SHA"
