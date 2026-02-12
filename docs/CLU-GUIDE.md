@@ -2,7 +2,9 @@
 
 > **Codified Likeness Utility** — Turn 10 messy transcripts into one clear build plan.
 
-CLU ingests multiple text transcripts (meeting notes, interviews, Slack threads, spec documents), extracts structured data from each, cross-references across all sources, and produces actionable reports. Optionally generates a Basher-compatible PRD for autonomous code generation.
+CLU ingests multiple transcripts (meeting notes, interviews, Slack threads, spec documents — as `.txt`, `.md`, `.pdf`, or `.docx` files), extracts structured data from each, cross-references across all sources, and produces actionable reports. Optionally generates a Basher-compatible PRD for autonomous code generation.
+
+**v1.0 Highlights:** PDF/DOCX ingestion, incremental analysis, interactive conflict resolution wizard, configurable extraction templates, full JSON API.
 
 ---
 
@@ -14,11 +16,14 @@ CLU ingests multiple text transcripts (meeting notes, interviews, Slack threads,
 4. [Skills Reference](#skills-reference)
 5. [Output Files](#output-files)
 6. [Configuration](#configuration)
-7. [Running CLU](#running-clu)
-8. [Review Checkpoints](#review-checkpoints)
-9. [End-to-End Example](#end-to-end-example)
-10. [Troubleshooting](#troubleshooting)
-11. [Technology Learning Module](#technology-learning-module)
+7. [Extraction Templates](#extraction-templates)
+8. [Running CLU](#running-clu)
+9. [Incremental Analysis](#incremental-analysis)
+10. [Conflict Resolution Wizard](#conflict-resolution-wizard)
+11. [Review Checkpoints](#review-checkpoints)
+12. [End-to-End Example](#end-to-end-example)
+13. [Troubleshooting](#troubleshooting)
+14. [Technology Learning Module](#technology-learning-module)
 
 ---
 
@@ -59,7 +64,7 @@ Generate manifest        Extract 8 entity types      Consensus ranking          
 
 ### Phase 1: Ingest & Discover
 
-CLU scans `./clu/transcripts/` for `.txt` and `.md` files. For each file, it:
+CLU scans `./clu/transcripts/` for supported files (`.txt`, `.md`, `.pdf`, `.docx`). PDF and DOCX files are automatically converted to text using PyMuPDF and python-docx respectively. For each file, it:
 - Auto-detects the type (meeting, interview, slack, spec, other)
 - Counts words to determine model selection
 - Generates a `manifest.json` with metadata
@@ -105,6 +110,8 @@ When enabled, takes `analysis.json` and generates a Basher-compatible `prd.md`:
 
 - `.txt` files — Plain text transcripts
 - `.md` files — Markdown-formatted notes
+- `.pdf` files — PDF documents (text extracted via PyMuPDF)
+- `.docx` files — Word documents (text extracted via python-docx)
 
 ### Transcript Types (Auto-Detected)
 
@@ -131,6 +138,8 @@ When enabled, takes `analysis.json` and generates a Basher-compatible `prd.md`:
 ├── architecture-review.txt      # Technical deep-dive
 ├── user-interviews.txt          # Stakeholder feedback
 ├── slack-api-discussion.md      # Async team conversation
+├── design-doc.pdf               # PDF design document
+├── requirements-spec.docx       # Word requirements doc
 └── manifest.json                # Auto-generated (don't edit manually)
 ```
 
@@ -235,6 +244,51 @@ Machine-readable data and raw extractions:
 
 ---
 
+## Extraction Templates
+
+Templates control which entity types the LLM extracts, letting you focus on what matters and reduce token usage.
+
+### Built-in Templates
+
+| Template | Sections | Best For |
+|----------|----------|----------|
+| `default` | All 8 entity types | Comprehensive analysis |
+| `requirements-only` | requirements, technicalConstraints, openQuestions | PRD generation, spec analysis |
+| `decisions-only` | participants, decisions, actionItems, deferredItems | Decision logs, governance tracking |
+
+### Using Templates
+
+**Via API:**
+```bash
+curl -X POST /api/v1/projects/{id}/analyze \
+  -H "Content-Type: application/json" \
+  -d '{"extraction_template": "requirements-only"}'
+```
+
+**List available templates:**
+```bash
+curl /api/v1/templates/extraction
+```
+
+### Custom Templates
+
+Create a JSON file following this structure:
+
+```json
+{
+  "name": "my-template",
+  "description": "What this template is for",
+  "sections": ["decisions", "risks"],
+  "guidelines": "Focus on decisions and risk identification."
+}
+```
+
+Valid sections: `participants`, `decisions`, `actionItems`, `requirements`, `technicalConstraints`, `openQuestions`, `risks`, `deferredItems`.
+
+Template files can also be placed in `templates/extraction-templates/` for reuse.
+
+---
+
 ## Running CLU
 
 ### Via Claude Code Skills (Interactive)
@@ -269,9 +323,86 @@ Best for running CLU unattended or in CI:
 | Flag | Description |
 |------|-------------|
 | `--prd` | Generate Basher-compatible PRD after analysis |
+| `--wizard` | Launch interactive conflict resolution wizard |
 | `--dir PATH` | Path to transcripts directory (default: `./clu/transcripts`) |
 | `--no-mcp-check` | Skip CacheBash MCP configuration check |
 | `-h, --help` | Show usage information |
+
+---
+
+## Incremental Analysis
+
+After your initial analysis, you can add new transcripts and re-analyze without re-extracting everything.
+
+### How It Works
+
+1. Only **new transcripts** (those without existing extractions) are extracted
+2. **All extractions** (new + cached) are re-indexed in ChromaDB
+3. **Synthesis re-runs** on the complete dataset for an updated cross-reference
+4. Results include metadata: `incremental: true`, `new_transcripts`, `total_transcripts`
+
+### Via API
+
+```bash
+# Add new transcripts to the project
+curl -X POST /api/v1/projects/{id}/transcripts \
+  -F "file=@new-meeting.txt"
+
+# Run incremental analysis (requires a previous completed analysis)
+curl -X POST /api/v1/projects/{id}/analyze/incremental
+```
+
+### When to Use
+
+- New meeting notes arrive after initial analysis
+- A stakeholder sends follow-up requirements
+- You want to add context without re-extracting 10+ existing transcripts
+
+Incremental analysis saves time and API costs by only calling the LLM for new content.
+
+---
+
+## Conflict Resolution Wizard
+
+An interactive CLI for resolving conflicts found by CLU analysis.
+
+### Running the Wizard
+
+```bash
+# Via clu.sh
+~/.basher/clu.sh --wizard
+
+# Directly
+scripts/clu-wizard.sh --dir ./clu
+```
+
+### What It Does
+
+The wizard reads `analysis.json`, presents each unresolved conflict, and lets you:
+
+- **[A/B/...]** Accept a specific position
+- **[c]** Enter a custom resolution
+- **[d]** Defer to Open Questions
+- **[s]** Skip (leave unresolved)
+
+### Output
+
+Resolutions are saved back to `analysis.json` and `conflicts.md` is regenerated with resolved conflicts shown as strikethrough.
+
+### Workflow
+
+```
+clu.sh --wizard
+  → Reads analysis.json
+  → For each unresolved conflict:
+      Shows topic, positions, sources, suggested resolution
+      Asks for your choice
+      Saves resolution to analysis.json
+  → Regenerates conflicts.md
+  → Shows summary (resolved/skipped)
+```
+
+After resolving conflicts, run `/clu-prd` to generate a PRD that incorporates your decisions.
 
 ---
 
@@ -304,9 +435,10 @@ Conflicts are the most important output. Each conflict in `conflicts.md` shows:
 ```
 
 After reviewing, you can:
-1. Edit `conflicts.md` directly with your resolution
-2. Re-run `/clu-prd` to generate an updated PRD
-3. Or use the `ask-user` conflict handling mode for interactive resolution
+1. Run the **conflict resolution wizard**: `clu.sh --wizard` (recommended)
+2. Edit `conflicts.md` directly with your resolution
+3. Re-run `/clu-prd` to generate an updated PRD
+4. Or use the `ask-user` conflict handling mode for interactive resolution
 
 ---
 
@@ -444,14 +576,14 @@ The full pipeline: 3 messy transcripts → CLU analysis → 6 user stories → 8
 
 ## Troubleshooting
 
-### "No .txt or .md files found"
+### "No supported files found"
 
 **Problem:** CLU can't find transcripts.
 
 **Solution:**
 ```bash
 ls ./clu/transcripts/           # Check files exist
-# Files must have .txt or .md extension
+# Supported formats: .txt, .md, .pdf, .docx
 ```
 
 ### Extractions are missing entities

@@ -68,12 +68,13 @@ update_status({
 
 ### Phase 1: Discovery & Manifest
 
-Scan `./clu/transcripts/` for text files and generate metadata.
+Scan `./clu/transcripts/` for supported files and generate metadata.
 
 1. **Find all transcripts:**
    ```bash
-   ls ./clu/transcripts/*.txt ./clu/transcripts/*.md 2>/dev/null
+   ls ./clu/transcripts/*.txt ./clu/transcripts/*.md ./clu/transcripts/*.pdf ./clu/transcripts/*.docx 2>/dev/null
    ```
+   PDF and DOCX files are automatically converted to text during upload via the API, or during extraction in CLI mode.
 
 2. **For each file, determine:**
    - Filename
@@ -491,6 +492,33 @@ Output:
 
 ---
 
+## Incremental Analysis Mode
+
+When triggered via the incremental endpoint (`/analyze/incremental`), the pipeline:
+
+1. **Identifies new transcripts** — only those without existing extractions
+2. **Extracts only new content** — skips previously extracted transcripts
+3. **Re-indexes everything** — all extractions (new + cached) go into ChromaDB
+4. **Re-synthesizes completely** — full cross-reference on all data
+
+This saves significant time and API costs when adding transcripts to an existing analysis.
+
+---
+
+## Extraction Templates
+
+Templates control which entity types subagents extract:
+
+| Template | Focus |
+|----------|-------|
+| `default` | All 8 entity types (full extraction) |
+| `requirements-only` | requirements, technicalConstraints, openQuestions |
+| `decisions-only` | participants, decisions, actionItems, deferredItems |
+
+When a template is specified, pass it to extraction subagents so they receive a focused schema. This reduces token usage and improves extraction precision for targeted analyses.
+
+---
+
 ## Important Reminders
 
 - You are the ORCHESTRATOR - delegate extraction to subagents
@@ -499,3 +527,6 @@ Output:
 - Keep CacheBash updated at each phase transition
 - Checkpoint with user at defined points but don't block indefinitely
 - Generate ALL report files even if some sections are empty
+- PDF and DOCX files are supported alongside .txt and .md
+- Use incremental analysis when adding new transcripts to an existing project
+- Pass extraction templates to subagents when a focused analysis is requested
