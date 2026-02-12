@@ -1,6 +1,6 @@
 [project]
 name = "clu-api"
-version = "0.2.0"
+version = "0.3.0"
 description = "CLU API — Multi-transcript analysis and synthesis microservice"
 requires-python = ">=3.11"
 dependencies = [
@@ -13,6 +13,8 @@ dependencies = [
     "python-multipart>=0.0.12",
     "pydantic>=2.10.0",
     "pydantic-settings>=2.6.0",
+    "chromadb>=0.5.0",
+    "redis>=5.0.0",
 ]
 
 [project.optional-dependencies]
