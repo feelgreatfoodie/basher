@@ -136,6 +136,22 @@ echo -e "${BLUE}[init]${NC} Creating ./clu directories..."
 mkdir -p ./clu/transcripts
 mkdir -p ./clu/extractions
 
+# Register Claude Code slash commands
+echo -e "${BLUE}[init]${NC} Registering slash commands..."
+mkdir -p .claude/commands
+if [[ -d "$BASHER_GLOBAL/skills" ]]; then
+    for skill_dir in "$BASHER_GLOBAL/skills"/*/; do
+        local_skill=$(basename "$skill_dir")
+        if [[ -f "$skill_dir/prompt.md" ]]; then
+            cp "$skill_dir/prompt.md" ".claude/commands/$local_skill.md"
+        fi
+    done
+    log_count=$(ls .claude/commands/*.md 2>/dev/null | wc -l | tr -d ' ')
+    echo -e "${GREEN}[init]${NC} Registered $log_count slash commands"
+else
+    echo -e "${YELLOW}[init]${NC} No skills found at $BASHER_GLOBAL/skills"
+fi
+
 # Copy config template
 echo -e "${BLUE}[init]${NC} Creating configuration..."
 if [[ -f "$BASHER_GLOBAL/templates/basher.config.json" ]]; then

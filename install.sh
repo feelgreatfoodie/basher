@@ -238,6 +238,21 @@ set_permissions() {
     chmod +x "$BASHER_HOME/lib/transcript-utils.sh"
 }
 
+install_global_commands() {
+    log_step "Installing global slash commands to ~/.claude/commands/..."
+    mkdir -p "$HOME/.claude/commands"
+    for skill_dir in "$BASHER_HOME/skills"/*/; do
+        local skill_name
+        skill_name=$(basename "$skill_dir")
+        if [[ -f "$skill_dir/prompt.md" ]]; then
+            cp "$skill_dir/prompt.md" "$HOME/.claude/commands/$skill_name.md"
+        fi
+    done
+    local cmd_count
+    cmd_count=$(ls "$HOME/.claude/commands"/*.md 2>/dev/null | wc -l | tr -d ' ')
+    log_success "Installed $cmd_count global slash commands"
+}
+
 detect_shell() {
     if [[ -n "${ZSH_VERSION:-}" ]] || [[ "$SHELL" == *"zsh"* ]]; then
         echo "zsh"
@@ -328,6 +343,7 @@ main() {
     fi
 
     set_permissions
+    install_global_commands
     print_success
 }
 
