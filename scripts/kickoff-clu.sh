@@ -7,6 +7,7 @@
 #   --from VERSION    Start from a specific version (default: v0.1)
 #   --to VERSION      Stop after a specific version (default: v1.0)
 #   --resume          Auto-detect last completed version and continue from next
+#   -y, --yes         Skip all interactive prompts (auto-accept)
 #   -h, --help        Show usage
 #
 # Examples:
@@ -29,6 +30,7 @@ ALL_VERSIONS=("v0.1" "v0.2" "v0.3" "v0.4" "v1.0")
 FROM_VERSION="v0.1"
 TO_VERSION="v1.0"
 RESUME=false
+AUTO_YES=false
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 REPO_DIR="$( cd "$SCRIPT_DIR/.." && pwd )"
@@ -55,6 +57,7 @@ usage() {
     echo "  --from VERSION    Start from version (default: v0.1)"
     echo "  --to VERSION      Stop after version (default: v1.0)"
     echo "  --resume          Auto-detect and resume from last completed version"
+    echo "  -y, --yes         Skip all interactive prompts (auto-accept)"
     echo "  -h, --help        Show this help"
     echo ""
     echo "Versions: v0.1, v0.2, v0.3, v0.4, v1.0"
@@ -66,6 +69,7 @@ parse_args() {
             --from)   FROM_VERSION="$2"; shift 2 ;;
             --to)     TO_VERSION="$2"; shift 2 ;;
             --resume) RESUME=true; shift ;;
+            -y|--yes) AUTO_YES=true; shift ;;
             -h|--help) usage; exit 0 ;;
             *) echo "Unknown option: $1"; usage; exit 1 ;;
         esac
@@ -175,10 +179,14 @@ check_prerequisites() {
         echo -e "  ${CYAN}  \"https://cachebash-mcp-922749444863.us-central1.run.app/v1/mcp\" \\${NC}"
         echo -e "  ${CYAN}  --header \"Authorization: Bearer YOUR_API_KEY\"${NC}"
         echo ""
-        read -p "  Continue without CacheBash? (y/N) " -n 1 -r
-        echo
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            exit 1
+        if [[ "$AUTO_YES" == "true" ]]; then
+            log_info "Auto-accepting: continue without CacheBash (--yes)"
+        else
+            read -p "  Continue without CacheBash? (y/N) " -n 1 -r
+            echo
+            if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+                exit 1
+            fi
         fi
     fi
 
@@ -200,10 +208,14 @@ check_prerequisites() {
         log_warn "Uncommitted changes detected"
         git status --short
         echo ""
-        read -p "  Continue anyway? (y/N) " -n 1 -r
-        echo
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            exit 1
+        if [[ "$AUTO_YES" == "true" ]]; then
+            log_info "Auto-accepting: continue with uncommitted changes (--yes)"
+        else
+            read -p "  Continue anyway? (y/N) " -n 1 -r
+            echo
+            if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+                exit 1
+            fi
         fi
     fi
 
@@ -270,27 +282,32 @@ setup_branch() {
             log_success "Resumed branch: $BRANCH_NAME"
         else
             log_warn "Branch $BRANCH_NAME already exists"
-            echo ""
-            echo "  [r] Resume previous build"
-            echo "  [f] Start fresh (delete and recreate branch)"
-            echo "  [q] Quit"
-            echo ""
-            read -p "  Choice: " -n 1 -r
-            echo
-            case "$REPLY" in
-                r|R)
-                    git checkout "$BRANCH_NAME"
-                    log_success "Resumed branch: $BRANCH_NAME"
-                    ;;
-                f|F)
-                    git branch -D "$BRANCH_NAME"
-                    git checkout -b "$BRANCH_NAME"
-                    log_success "Fresh branch created: $BRANCH_NAME"
-                    ;;
-                *)
-                    exit 0
-                    ;;
-            esac
+            if [[ "$AUTO_YES" == "true" ]]; then
+                git checkout "$BRANCH_NAME"
+                log_info "Auto-resuming branch: $BRANCH_NAME (--yes)"
+            else
+                echo ""
+                echo "  [r] Resume previous build"
+                echo "  [f] Start fresh (delete and recreate branch)"
+                echo "  [q] Quit"
+                echo ""
+                read -p "  Choice: " -n 1 -r
+                echo
+                case "$REPLY" in
+                    r|R)
+                        git checkout "$BRANCH_NAME"
+                        log_success "Resumed branch: $BRANCH_NAME"
+                        ;;
+                    f|F)
+                        git branch -D "$BRANCH_NAME"
+                        git checkout -b "$BRANCH_NAME"
+                        log_success "Fresh branch created: $BRANCH_NAME"
+                        ;;
+                    *)
+                        exit 0
+                        ;;
+                esac
+            fi
         fi
     else
         git checkout -b "$BRANCH_NAME"
@@ -664,13 +681,17 @@ run_build_chain() {
     echo -e "${CYAN}==============================================================${NC}"
     echo ""
 
-    read -p "Launch continuous AFK build? (Y/n) " -n 1 -r
-    echo
+    if [[ "$AUTO_YES" == "true" ]]; then
+        log_info "Auto-launching build (--yes)"
+    else
+        read -p "Launch continuous AFK build? (Y/n) " -n 1 -r
+        echo
 
-    if [[ $REPLY =~ ^[Nn]$ ]]; then
-        echo ""
-        log_info "Build not launched."
-        exit 0
+        if [[ $REPLY =~ ^[Nn]$ ]]; then
+            echo ""
+            log_info "Build not launched."
+            exit 0
+        fi
     fi
 
     echo ""
