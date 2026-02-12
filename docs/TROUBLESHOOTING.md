@@ -11,8 +11,9 @@ This guide covers common issues and their solutions when using Basher for Claude
 3. [Quality Gate Failures](#quality-gate-failures)
 4. [Git Issues](#git-issues)
 5. [Anti-Patterns & Known Pitfalls](#anti-patterns--known-pitfalls)
-6. [Performance Issues](#performance-issues)
-7. [Getting Help](#getting-help)
+6. [CLU API & Docker Issues](#clu-api--docker-issues)
+7. [Performance Issues](#performance-issues)
+8. [Getting Help](#getting-help)
 
 ---
 
@@ -544,6 +545,118 @@ Re-run `install.sh` to fix missing skill registrations.
 git add .
 git commit -m "Initial commit"
 ~/.basher/basher.sh
+```
+
+---
+
+## CLU API & Docker Issues
+
+### docker-compose up fails
+
+**Problem:** Services won't start or crash on startup.
+
+**Solutions:**
+
+1. **Check Docker is running:**
+   ```bash
+   docker info
+   ```
+
+2. **Check port conflicts (5432, 6379, 8000):**
+   ```bash
+   lsof -i :5432   # PostgreSQL
+   lsof -i :6379   # Redis
+   lsof -i :8000   # API
+   ```
+
+3. **Reset everything:**
+   ```bash
+   cd clu-api
+   docker-compose down -v   # Remove containers AND volumes
+   docker-compose up -d     # Fresh start
+   docker-compose exec api alembic upgrade head
+   ```
+
+---
+
+### Alembic migration errors
+
+**Problem:** `alembic upgrade head` fails.
+
+**Solutions:**
+
+1. **Check the database is ready:**
+   ```bash
+   docker-compose exec db pg_isready
+   ```
+
+2. **Reset migrations (development only):**
+   ```bash
+   docker-compose exec api alembic downgrade base
+   docker-compose exec api alembic upgrade head
+   ```
+
+3. **Check migration files for syntax:**
+   ```bash
+   ls clu-api/alembic/versions/
+   ```
+
+---
+
+### Redis connection refused
+
+**Problem:** API returns 500 errors related to Redis.
+
+**Solution:** Verify Redis is running and accessible:
+```bash
+docker-compose exec redis redis-cli ping
+# Should return: PONG
+```
+
+If Redis isn't started, check `docker-compose.yml` includes the Redis service.
+
+---
+
+### ChromaDB not responding
+
+**Problem:** Semantic search features return errors.
+
+**Solution:** ChromaDB takes a few seconds to initialize:
+```bash
+# Check health
+curl http://localhost:8000/health
+# Look for "chromadb": "healthy" in response
+```
+
+If ChromaDB is unhealthy, restart it:
+```bash
+docker-compose restart chromadb
+```
+
+---
+
+### API returns 401 Unauthorized
+
+**Problem:** All API requests fail with 401.
+
+**Solution:** The v0.4 API requires an API key header:
+```bash
+curl -H "X-API-Key: your-key" http://localhost:8000/api/v1/projects
+```
+
+For local development, check if auth middleware is active. You may need to create an API key in the database or disable auth for development.
+
+---
+
+### kickoff-clu.sh hangs in background
+
+**Problem:** `kickoff-clu.sh` stops responding when run in background.
+
+**Cause:** Interactive `read -p` prompts can't receive input in background mode.
+
+**Fix:** Use the `--yes` flag to skip all interactive prompts:
+```bash
+./scripts/kickoff-clu.sh --from v0.2 --yes
 ```
 
 ---

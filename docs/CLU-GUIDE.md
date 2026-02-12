@@ -646,6 +646,87 @@ See [Anti-Patterns](TROUBLESHOOTING.md#anti-patterns--known-pitfalls) for the fu
 
 ---
 
+## CLU API — Getting Started
+
+The CLU API (`clu-api/`) is a FastAPI microservice that exposes CLU as a REST API. Use it for production deployments, CI pipelines, or team-wide access.
+
+### Prerequisites
+
+- Docker and docker-compose installed
+- Anthropic API key
+
+### Local Development Setup
+
+```bash
+cd clu-api
+
+# Create .env file
+cp .env.example .env
+# Edit .env and add your ANTHROPIC_API_KEY
+
+# Start all services
+docker-compose up -d
+
+# Run database migrations
+docker-compose exec api alembic upgrade head
+
+# Optional: seed sample data
+docker-compose exec api python scripts/seed.py
+```
+
+The API is available at `http://localhost:8000`. Interactive Swagger docs at `http://localhost:8000/docs`.
+
+### API Workflow
+
+```bash
+# 1. Create a project
+curl -X POST http://localhost:8000/api/v1/projects \
+  -H "Content-Type: application/json" \
+  -d '{"name": "my-project"}'
+
+# 2. Upload transcripts (supports .txt, .md, .pdf, .docx)
+curl -X POST http://localhost:8000/api/v1/projects/1/transcripts \
+  -F "file=@meeting-notes.txt"
+
+# 3. Trigger analysis
+curl -X POST http://localhost:8000/api/v1/projects/1/analyze
+
+# 4. Poll status
+curl http://localhost:8000/api/v1/projects/1/analysis/status
+
+# 5. Get results
+curl http://localhost:8000/api/v1/projects/1/analysis/results
+```
+
+### Production Features (v0.4)
+
+| Feature | Description |
+|---------|-------------|
+| **API key auth** | Header: `X-API-Key`. Keys managed via database. |
+| **Rate limiting** | Redis-backed sliding window. Configurable per-key limits. |
+| **Tenant isolation** | All queries scoped by `tenant_id`. Data never leaks between tenants. |
+| **Job recovery** | Failed analyses resume from last checkpoint instead of restarting. |
+| **Structured logging** | JSON logs with request IDs for tracing. |
+| **Health checks** | `GET /health` returns service status including DB, Redis, ChromaDB connectivity. |
+
+### GCP Cloud Run Deployment
+
+```bash
+# Deploy via Cloud Build
+gcloud builds submit --config=cloudbuild.yaml
+
+# Or build and push manually
+docker build -t gcr.io/PROJECT/clu-api .
+docker push gcr.io/PROJECT/clu-api
+gcloud run deploy clu-api --image gcr.io/PROJECT/clu-api
+```
+
+Required environment variables for production: `DATABASE_URL`, `ANTHROPIC_API_KEY`, `REDIS_URL`, `CHROMADB_HOST`.
+
+For full API endpoint reference, see [clu-api/README.md](../clu-api/README.md).
+
+---
+
 ## Technology Learning Module
 
 CLU is designed to evolve from a CLI skill (v0.1) to a full API microservice (v0.2+). This section covers the technologies used in the full roadmap, providing enough context to understand the architecture and discuss it credibly.

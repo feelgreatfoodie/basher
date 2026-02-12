@@ -8,7 +8,7 @@ Basher is an autonomous code generation system that uses Claude Code to implemen
 
 **New in v3:** Hybrid model architecture (Opus orchestrator + Sonnet subagents), continuous interrupt polling, dynamic sprint insertion, and enhanced Opus code review.
 
-**New: CLU** (Codified Likeness Utility) — Multi-transcript analysis and synthesis engine. Ingests 10+ mixed-format transcripts, extracts structured data, cross-references across sources, and produces actionable reports. Optionally generates a Basher-compatible PRD.
+**New: CLU** (Codified Likeness Utility) — Multi-transcript analysis and synthesis engine. Ingests 10+ mixed-format transcripts (.txt, .md, .pdf, .docx), extracts structured data, cross-references across sources, and produces actionable reports. Available as CLI skills (v0.1) and a FastAPI microservice (v0.2+) with PostgreSQL, ChromaDB semantic search, Redis caching, API key auth, rate limiting, tenant isolation, and GCP Cloud Run deployment.
 
 ## Repository Structure
 
@@ -19,6 +19,7 @@ basher/
 │   ├── basher-init.sh         # Project initialization
 │   ├── package.sh             # Create shareable package
 │   ├── clu.sh                 # CLU execution script
+│   ├── clu-wizard.sh          # Interactive conflict resolution wizard
 │   └── kickoff-clu.sh         # CLU continuous AFK build (v0.1→v1.0)
 ├── prompts/                    # Agent prompts for parallel mode
 │   ├── orchestrator.md        # Main orchestrator prompt
@@ -44,7 +45,21 @@ basher/
 │   └── TROUBLESHOOTING.md     # Troubleshooting + anti-patterns
 ├── templates/                  # Configuration templates
 │   ├── basher.config.json     # Basher config template
-│   └── clu.config.json        # CLU config template
+│   ├── clu.config.json        # CLU config template
+│   └── extraction-templates/  # CLU extraction templates (default, requirements-only, decisions-only)
+├── clu-api/                    # CLU FastAPI microservice (v0.2+)
+│   ├── app/                   # FastAPI application
+│   │   ├── api/               # Route handlers (projects, transcripts, analysis)
+│   │   ├── models/            # SQLAlchemy ORM models
+│   │   ├── schemas/           # Pydantic request/response models
+│   │   ├── services/          # Business logic (extraction, synthesis, parsers, cache, recovery)
+│   │   ├── middleware/        # Auth, rate limiting, tenant isolation
+│   │   └── prompts/           # Prompt templates for Anthropic SDK
+│   ├── alembic/               # Database migrations
+│   ├── tests/                 # pytest test suite (API + services)
+│   ├── docker-compose.yml     # API + PostgreSQL + Redis + ChromaDB
+│   ├── cloudbuild.yaml        # GCP Cloud Run deployment
+│   └── README.md              # API documentation
 ├── saas-blueprint/             # Complete SaaS reference blueprint (separate git repo)
 │   ├── domains/               # 8 domain extractions
 │   ├── architecture/          # System design docs
@@ -217,8 +232,19 @@ CLU (Codified Likeness Utility) ingests multiple text transcripts, extracts stru
 ./clu/transcripts/          Phase 1: Extract        Phase 2: Synthesize       Phase 3: PRD (optional)
  ├── meeting-1.txt    ──►  Per-transcript     ──►  Cross-reference      ──►  Basher-compatible
  ├── interview-2.txt       extraction JSONs         analysis + reports        prd.md / prd.json
- └── spec-doc.txt          (Sonnet, parallel)       (Opus, single pass)
+ ├── spec-doc.pdf          (Sonnet, parallel)       (Opus, single pass)
+ └── requirements.docx
 ```
+
+### CLU Versions
+
+| Version | Codename | What It Adds |
+|---------|----------|-------------|
+| v0.1 | "Prove the synthesis" | CLI skills, bash scripts, prompt templates |
+| v0.2 | "Open the API" | FastAPI + PostgreSQL + Docker + Anthropic SDK |
+| v0.3 | "Semantic intelligence" | ChromaDB embeddings, Redis caching, confidence scoring |
+| v0.4 | "Production hardening" | API key auth, rate limiting, tenant isolation, GCP Cloud Run |
+| v1.0 | "Make it useful daily" | PDF/DOCX ingestion, incremental analysis, conflict wizard, extraction templates |
 
 ### CLU Output Files
 
@@ -278,6 +304,33 @@ CLU (Codified Likeness Utility) ingests multiple text transcripts, extracts stru
 └── clu.config.json           # CLU-specific config
 ```
 
+### CLU API (v0.2+)
+
+The `clu-api/` directory contains a FastAPI microservice that exposes CLU as a REST API. See [clu-api/README.md](clu-api/README.md) for full API docs.
+
+**Key endpoints:**
+- `POST /api/v1/projects` — Create a project
+- `POST /api/v1/projects/{id}/transcripts` — Upload transcript (supports PDF/DOCX)
+- `POST /api/v1/projects/{id}/analyze` — Trigger analysis (background job)
+- `POST /api/v1/projects/{id}/analyze/incremental` — Incremental analysis (new transcripts only)
+- `GET /api/v1/projects/{id}/analysis/results` — Get full results
+- `GET /api/v1/templates/extraction` — List extraction templates
+
+**Running locally:**
+```bash
+cd clu-api
+docker-compose up -d                          # Start API + PostgreSQL + Redis + ChromaDB
+docker-compose exec api alembic upgrade head   # Run migrations
+# API at http://localhost:8000, docs at http://localhost:8000/docs
+```
+
+**Production features (v0.4):**
+- API key authentication (header: `X-API-Key`)
+- Redis-backed sliding window rate limiting
+- Tenant isolation (all queries scoped by `tenant_id`)
+- GCP Cloud Run deployment via `cloudbuild.yaml`
+- Job recovery with checkpointing for failed analyses
+
 ### Running CLU
 
 ```bash
@@ -289,7 +342,12 @@ claude /basher-convert         # Step 3: Convert PRD to JSON tasks
 # Via bash script (autonomous / AFK)
 ~/.basher/clu.sh               # Analysis only
 ~/.basher/clu.sh --prd         # Analysis + PRD generation
+~/.basher/clu.sh --wizard      # Interactive conflict resolution
 ~/.basher/clu.sh --dir ~/notes # Custom transcript directory
+
+# Via kickoff-clu.sh (builds CLU itself, not user-facing)
+./scripts/kickoff-clu.sh --from v0.2 --yes   # Build from version, skip prompts
+./scripts/kickoff-clu.sh --resume --yes       # Auto-detect and continue
 ```
 
 ### Full Pipeline (Recommended Workflow)
@@ -329,6 +387,26 @@ bash -n lib/transcript-utils.sh
 cp your-notes.txt ./clu/transcripts/
 claude /clu-analyze
 ```
+
+## Key Scripts (CLU-Specific)
+
+### clu-wizard.sh
+
+Interactive conflict resolution wizard:
+- Reads `analysis.json` for unresolved conflicts
+- Presents each conflict with positions, sources, and suggested resolution
+- Options: accept position A/B, custom resolution, defer, skip
+- Saves resolutions back to `analysis.json`
+- Regenerates `conflicts.md` with resolved items
+
+### kickoff-clu.sh
+
+Meta-build script for building CLU itself (v0.1→v1.0):
+- Chains through version builds, each as a fresh Claude session
+- `--from VERSION` / `--to VERSION` to target specific range
+- `--resume` auto-detects last completed version
+- `-y / --yes` bypasses all interactive prompts (required for background execution)
+- Each version generates a prompt, pipes it to Claude, and pushes commits
 
 ## The saas-blueprint
 

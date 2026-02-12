@@ -40,8 +40,8 @@ curl -fsSL https://raw.githubusercontent.com/feelgreatfoodie/basher/main/install
 cd my-project && git init
 ~/.basher/basher-init.sh
 
-# 2. Drop transcripts
-cp meeting-notes.txt design-review.txt feedback.md ./clu/transcripts/
+# 2. Drop transcripts (.txt, .md, .pdf, .docx)
+cp meeting-notes.txt design-review.txt feedback.md spec.pdf ./clu/transcripts/
 
 # 3. Analyze → PRD → Build (all inside Claude Code)
 claude
@@ -72,7 +72,8 @@ Both paths end the same way: Basher builds your app while you grab coffee.
 11. [Troubleshooting](#troubleshooting)
 12. [FAQ](#faq)
 13. [CLU — Multi-Transcript Analysis & Synthesis](#clu--multi-transcript-analysis--synthesis)
-14. [Anti-Patterns & Gotchas](#anti-patterns--gotchas)
+14. [CLU API](#clu-api-v02)
+15. [Anti-Patterns & Gotchas](#anti-patterns--gotchas)
 15. [The Grid — Ecosystem](#the-grid--ecosystem)
 16. [Contributing](#contributing)
 
@@ -1018,7 +1019,7 @@ claude /clu-analyze      # Analysis only
 
 ### How CLU Works
 
-1. **Ingest**: Drop `.txt` or `.md` files into `./clu/transcripts/`
+1. **Ingest**: Drop `.txt`, `.md`, `.pdf`, or `.docx` files into `./clu/transcripts/`
 2. **Extract**: Sonnet subagents process each transcript in parallel, extracting participants, decisions, requirements, action items, risks, and more into structured JSON
 3. **Synthesize**: Opus orchestrator cross-references all extractions — finding consensus, detecting conflicts, tracking decisions, deduplicating stakeholders, and identifying gaps
 4. **Report**: Generates markdown reports and a machine-readable `analysis.json`
@@ -1084,7 +1085,30 @@ claude /basher-convert
 
 **Result:** 6 iterations, 13 commits, 89 tests passing, 99.58% code coverage. Complete Express 5 API with SQLite, JWT auth, bcrypt, and rate limiting — built autonomously.
 
-For detailed documentation, see [CLU Guide](docs/CLU-GUIDE.md).
+### CLU API (v0.2+)
+
+CLU is also available as a **FastAPI microservice** for production use, CI pipelines, or team-wide access.
+
+```bash
+cd clu-api
+docker-compose up -d                          # Start API + PostgreSQL + Redis + ChromaDB
+docker-compose exec api alembic upgrade head   # Run migrations
+# API at http://localhost:8000, docs at http://localhost:8000/docs
+```
+
+**Key capabilities:**
+- REST API for transcript upload, analysis, and results retrieval
+- **PDF/DOCX ingestion** — Upload PDF or Word documents directly
+- **Incremental analysis** — Add new transcripts without re-extracting everything
+- **Semantic search** — ChromaDB embeddings for cross-transcript similarity
+- **Redis caching** — Cache extractions by content hash, saving API costs
+- **Production-ready** — API key auth, rate limiting, tenant isolation, GCP Cloud Run deployment
+
+**Additional CLI tools:**
+- **Conflict resolution wizard** — Interactive CLI for resolving conflicts: `~/.basher/clu.sh --wizard`
+- **Extraction templates** — Focus on specific entity types: `default`, `requirements-only`, `decisions-only`
+
+For full API docs, see [clu-api/README.md](clu-api/README.md). For detailed CLU docs, see [CLU Guide](docs/CLU-GUIDE.md).
 
 ---
 

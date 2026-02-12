@@ -136,7 +136,7 @@ Watch the terminal to see progress, or come back later!
 
 ## Alternative Path: Start with CLU (Multiple Transcripts)
 
-If you have multiple meeting notes, interviews, or spec documents, use CLU first to analyze and synthesize them into a single PRD.
+If you have multiple meeting notes, interviews, or spec documents (`.txt`, `.md`, `.pdf`, `.docx`), use CLU first to analyze and synthesize them into a single PRD.
 
 ### Step 1: Set Up Transcripts
 
@@ -144,8 +144,8 @@ If you have multiple meeting notes, interviews, or spec documents, use CLU first
 mkdir my-app && cd my-app && git init
 ~/.basher/basher-init.sh
 
-# Drop your transcripts into the CLU directory
-cp meeting-notes.txt design-review.txt stakeholder-feedback.md ./clu/transcripts/
+# Drop your transcripts into the CLU directory (.txt, .md, .pdf, .docx supported)
+cp meeting-notes.txt design-review.txt stakeholder-feedback.md spec.pdf ./clu/transcripts/
 ```
 
 ### Step 2: Analyze with CLU
@@ -161,11 +161,14 @@ Inside Claude, type:
 
 CLU extracts structured data from each transcript, cross-references across all sources, and generates reports (conflicts, gaps, decisions, requirements).
 
-### Step 3: Review Conflicts
+### Step 3: Review and Resolve Conflicts
 
 ```bash
 cat ./clu/SUMMARY.md      # Executive summary
 cat ./clu/conflicts.md     # Contradictions to resolve
+
+# Optional: use the interactive wizard to resolve conflicts
+~/.basher/clu.sh --wizard
 ```
 
 ### Step 4: Generate PRD from Analysis
@@ -194,10 +197,26 @@ Transcripts → /clu-analyze → Review conflicts → /clu-prd → /basher-conve
 
 ---
 
+## Alternative Path: CLU API (Production / Team Use)
+
+If you need a persistent API rather than CLI skills (e.g., for CI pipelines or team-wide access):
+
+```bash
+cd clu-api
+docker-compose up -d                          # Start API + PostgreSQL + Redis + ChromaDB
+docker-compose exec api alembic upgrade head   # Run migrations
+# API at http://localhost:8000, docs at http://localhost:8000/docs
+```
+
+Upload transcripts via API, trigger analysis, and retrieve results programmatically. See [clu-api/README.md](../clu-api/README.md) for full endpoint docs.
+
+---
+
 ## Next Steps
 
 - Read the [full README](../README.md) for detailed documentation
 - Read the [CLU Guide](CLU-GUIDE.md) for detailed transcript analysis docs
+- Read the [CLU API docs](../clu-api/README.md) for the REST API
 - Check [Configuration Options](../README.md#configuration-options) to customize Basher
 - Set up [CacheBash Integration](../README.md#cachebash-integration-optional) for mobile monitoring
 - See [Troubleshooting](TROUBLESHOOTING.md) if you run into issues
