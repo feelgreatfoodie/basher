@@ -156,3 +156,36 @@ def test_get_extraction_confidence_no_extractions(client, db):
 
     response = client.get(f"/api/v1/projects/{project_id}/analysis/confidence")
     assert response.status_code == 404
+
+
+@patch("app.api.analysis.run_incremental_analysis")
+def test_trigger_incremental_analysis(mock_incremental, client, db):
+    """Incremental analysis requires a previous completed analysis."""
+    project = client.post("/api/v1/projects", json={"name": "Test"}).json()
+    project_id = project["id"]
+
+    # Create a completed analysis
+    analysis = Analysis(
+        project_id=project_id,
+        status="complete",
+        results_json='{"summary": {}}',
+        tenant_id=TEST_TENANT_ID,
+    )
+    db.add(analysis)
+    db.commit()
+
+    response = client.post(f"/api/v1/projects/{project_id}/analyze/incremental")
+    assert response.status_code == 202
+    data = response.json()
+    assert data["status"] == "pending"
+    mock_incremental.assert_called_once()
+
+
+def test_trigger_incremental_no_previous_analysis(client, db):
+    """Incremental analysis without a previous completed analysis should 409."""
+    project = client.post("/api/v1/projects", json={"name": "Test"}).json()
+    project_id = project["id"]
+
+    response = client.post(f"/api/v1/projects/{project_id}/analyze/incremental")
+    assert response.status_code == 409
+    assert "Run a full analysis first" in response.json()["detail"]

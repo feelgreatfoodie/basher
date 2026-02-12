@@ -12,6 +12,7 @@ from app.schemas import (
     AnalysisStatusResponse,
     AnalysisResultsResponse,
 )
+from app.services.incremental import run_incremental_analysis
 from app.services.pipeline import run_analysis_pipeline
 from app.services.prd_generator import generate_prd as generate_prd_service
 from app.services.recovery import recover_analysis
@@ -166,6 +167,47 @@ def get_analysis_by_type(
         )
 
     return {"type": result_type, "data": section}
+
+
+@router.post("/analyze/incremental", response_model=AnalysisResponse, status_code=202)
+def trigger_incremental_analysis(
+    project_id: str,
+    background_tasks: BackgroundTasks,
+    data: AnalysisTriggerRequest | None = None,
+    db: Session = Depends(get_db),
+    tenant_id: str | None = Depends(get_tenant_id),
+):
+    """Run incremental analysis — only extract new transcripts, then re-synthesize.
+
+    Requires a previous completed analysis for this project. Only new transcripts
+    (those without existing extractions) will be extracted. Synthesis re-runs on
+    all extractions (new + cached).
+    """
+    _get_project(db, project_id, tenant_id)
+
+    # Verify a completed analysis exists
+    prev = (
+        db.query(Analysis)
+        .filter(Analysis.project_id == project_id, Analysis.status == "complete")
+    )
+    if tenant_id:
+        prev = prev.filter(Analysis.tenant_id == tenant_id)
+    if not prev.first():
+        raise HTTPException(
+            status_code=409,
+            detail="No completed analysis found. Run a full analysis first.",
+        )
+
+    analysis = Analysis(project_id=project_id, status="pending", tenant_id=tenant_id)
+    db.add(analysis)
+    db.commit()
+    db.refresh(analysis)
+
+    generate_prd_flag = data.generate_prd if data else False
+    background_tasks.add_task(
+        run_incremental_analysis, analysis.id, project_id, generate_prd_flag
+    )
+    return analysis
 
 
 @router.post("/analysis/retry", status_code=202)
