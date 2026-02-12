@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database import SessionLocal
 from app.models import Analysis, Transcript, Extraction
+from app.services.confidence import score_extraction
 from app.services.embeddings import index_extraction, find_semantic_conflicts
 from app.services.extractor import extract_transcript
 from app.services.prd_generator import generate_prd
@@ -117,15 +118,17 @@ def _execute_pipeline(db: Session, analysis_id: str, project_id: str,
                 filename = futures[future]
                 try:
                     result = future.result()
+                    confidence = score_extraction(result["data"])
                     extraction = Extraction(
                         transcript_id=result["transcript_id"],
                         data_json=json.dumps(result["data"]),
+                        confidence=confidence,
                         model_used=result["model_used"],
                         tenant_id=result["tenant_id"],
                     )
                     db.add(extraction)
                     db.commit()
-                    logger.info("Extracted %s", filename)
+                    logger.info("Extracted %s (confidence=%.3f)", filename, confidence)
                 except Exception as e:
                     logger.error("Extraction failed for %s: %s", filename, e)
                     errors.append(f"{filename}: {e}")

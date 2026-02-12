@@ -4,7 +4,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Project, Analysis
+from app.models import Project, Analysis, Transcript, Extraction
 from app.schemas import (
     AnalysisTriggerRequest,
     AnalysisResponse,
@@ -94,6 +94,44 @@ def get_analysis_by_type(project_id: str, result_type: str, db: Session = Depend
         raise HTTPException(status_code=404, detail=f"No '{result_type}' section in analysis results")
 
     return {"type": result_type, "data": section}
+
+
+@router.get("/analysis/confidence")
+def get_extraction_confidence(project_id: str, db: Session = Depends(get_db)):
+    """Get confidence scores for all extractions in a project."""
+    project = db.query(Project).filter(Project.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    extractions = (
+        db.query(Extraction, Transcript.filename)
+        .join(Transcript)
+        .filter(Transcript.project_id == project_id)
+        .all()
+    )
+
+    if not extractions:
+        raise HTTPException(status_code=404, detail="No extractions found for this project")
+
+    scores = [
+        {
+            "transcript_id": ext.transcript_id,
+            "filename": filename,
+            "confidence": ext.confidence,
+        }
+        for ext, filename in extractions
+    ]
+
+    avg_confidence = (
+        sum(s["confidence"] for s in scores if s["confidence"] is not None)
+        / max(sum(1 for s in scores if s["confidence"] is not None), 1)
+    )
+
+    return {
+        "project_id": project_id,
+        "average_confidence": round(avg_confidence, 3),
+        "extractions": scores,
+    }
 
 
 @router.post("/prd", status_code=202)
