@@ -1,0 +1,10 @@
+{
+  "clu": {
+    "maxConcurrent": 3,
+    "extractorModel": "sonnet",
+    "synthesizerModel": "opus",
+    "autoManifest": true,
+    "prdGeneration": false,
+    "conflictHandling": "open-questions"
+  }
+}
