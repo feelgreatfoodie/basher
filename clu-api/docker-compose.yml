@@ -6,9 +6,13 @@ services:
     environment:
       - DATABASE_URL=postgresql://clu:clu_dev@db:5432/clu
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - CHROMADB_HOST=chromadb
+      - CHROMADB_PORT=8000
     depends_on:
       db:
         condition: service_healthy
+      chromadb:
+        condition: service_started
     volumes:
       - .:/app
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
@@ -29,5 +33,15 @@ services:
       timeout: 5s
       retries: 5
 
+  chromadb:
+    image: chromadb/chroma:latest
+    ports:
+      - "8001:8000"
+    volumes:
+      - chromadata:/chroma/chroma
+    environment:
+      - ANONYMIZED_TELEMETRY=false
+
 volumes:
   pgdata:
+  chromadata:

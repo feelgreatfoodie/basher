@@ -11,12 +11,19 @@ from app.prompts.synthesize import SYNTHESIS_SYSTEM_PROMPT, build_synthesis_prom
 logger = logging.getLogger(__name__)
 
 
-def synthesize_extractions(extractions: list[dict]) -> dict:
-    """Cross-reference all extraction data and produce unified analysis."""
+def synthesize_extractions(
+    extractions: list[dict],
+    semantic_conflicts: list[dict] | None = None,
+) -> dict:
+    """Cross-reference all extraction data and produce unified analysis.
+
+    If semantic_conflicts are provided (from ChromaDB similarity search),
+    they are included as hints for the LLM to investigate further.
+    """
     client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
 
     extractions_json = json.dumps(extractions, indent=2)
-    user_prompt = build_synthesis_prompt(extractions_json)
+    user_prompt = build_synthesis_prompt(extractions_json, semantic_conflicts=semantic_conflicts)
 
     logger.info("Synthesizing %d extractions with %s", len(extractions), settings.synthesis_model)
 

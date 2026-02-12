@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database import SessionLocal
 from app.models import Analysis, Transcript, Extraction
+from app.services.embeddings import index_extraction, find_semantic_conflicts
 from app.services.extractor import extract_transcript
 from app.services.prd_generator import generate_prd
 from app.services.synthesizer import synthesize_extractions
@@ -133,10 +134,7 @@ def _execute_pipeline(db: Session, analysis_id: str, project_id: str,
         error_summary = "; ".join(errors)
         raise RuntimeError(f"Extraction failed for {len(errors)} transcript(s): {error_summary}")
 
-    # Phase 2: Synthesize all extractions
-    analysis.status = "synthesizing"
-    db.commit()
-
+    # Phase 1.5: Index extractions into ChromaDB for semantic search
     all_extractions = (
         db.query(Extraction)
         .join(Transcript)
@@ -145,7 +143,22 @@ def _execute_pipeline(db: Session, analysis_id: str, project_id: str,
     )
 
     extraction_data = [json.loads(e.data_json) for e in all_extractions]
-    synthesis = synthesize_extractions(extraction_data)
+
+    semantic_conflicts = []
+    try:
+        for ext_data in extraction_data:
+            index_extraction(ext_data, project_id)
+        semantic_conflicts = find_semantic_conflicts(project_id)
+        logger.info("Found %d semantic conflict candidates for project %s",
+                     len(semantic_conflicts), project_id)
+    except Exception as e:
+        logger.warning("ChromaDB indexing failed (non-fatal): %s", e)
+
+    # Phase 2: Synthesize all extractions
+    analysis.status = "synthesizing"
+    db.commit()
+
+    synthesis = synthesize_extractions(extraction_data, semantic_conflicts=semantic_conflicts)
 
     # Optional Phase 3: Generate PRD
     if generate_prd_flag:

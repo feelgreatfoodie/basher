@@ -15,7 +15,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="CLU API",
     description="Multi-transcript analysis and synthesis engine",
-    version="0.2.0",
+    version="0.3.0",
     lifespan=lifespan,
 )
 

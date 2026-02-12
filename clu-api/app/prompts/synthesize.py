@@ -28,8 +28,24 @@ SYNTHESIS_OUTPUT_SCHEMA = """{
 }"""
 
 
-def build_synthesis_prompt(extractions_json: str) -> str:
+def build_synthesis_prompt(
+    extractions_json: str,
+    semantic_conflicts: list[dict] | None = None,
+) -> str:
     """Build the user prompt for cross-reference synthesis."""
+    semantic_section = ""
+    if semantic_conflicts:
+        import json
+        hints = json.dumps(semantic_conflicts[:20], indent=2)  # Cap at 20 hints
+        semantic_section = f"""
+
+**Semantic similarity hints (from vector search):**
+The following entity pairs were flagged as semantically similar but from different sources.
+Investigate each pair — they may represent conflicts, agreements, or related but distinct items.
+
+{hints}
+"""
+
     return f"""Cross-reference and synthesize the following extraction data from multiple transcripts.
 
 **Instructions:**
@@ -39,7 +55,7 @@ def build_synthesis_prompt(extractions_json: str) -> str:
 4. Track decisions: mark as confirmed if repeated in later transcripts, revisited if contradicted
 5. Identify gaps: concepts referenced but never fully defined
 6. Consolidate action items, merge duplicates, track status across sources
-
+{semantic_section}
 **Output format:** Return ONLY valid JSON matching this schema:
 {SYNTHESIS_OUTPUT_SCHEMA}
 
