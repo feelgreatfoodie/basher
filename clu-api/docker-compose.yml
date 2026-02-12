@@ -8,11 +8,14 @@ services:
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - CHROMADB_HOST=chromadb
       - CHROMADB_PORT=8000
+      - REDIS_URL=redis://redis:6379/0
     depends_on:
       db:
         condition: service_healthy
       chromadb:
         condition: service_started
+      redis:
+        condition: service_healthy
     volumes:
       - .:/app
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
@@ -42,6 +45,19 @@ services:
     environment:
       - ANONYMIZED_TELEMETRY=false
 
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
 volumes:
   pgdata:
   chromadata:
+  redisdata:

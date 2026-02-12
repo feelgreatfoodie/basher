@@ -7,8 +7,21 @@ import anthropic
 
 from app.config import settings
 from app.prompts.extract import EXTRACTION_SYSTEM_PROMPT, build_extraction_prompt
+from app.services.cache import get_cached_extraction, set_cached_extraction
 
 logger = logging.getLogger(__name__)
+
+
+def _parse_json_response(response_text: str) -> dict:
+    """Parse JSON from LLM response, handling markdown code blocks."""
+    json_text = response_text.strip()
+    if json_text.startswith("```"):
+        lines = json_text.split("\n")
+        lines = lines[1:]  # Remove opening ```json
+        if lines and lines[-1].strip() == "```":
+            lines = lines[:-1]  # Remove closing ```
+        json_text = "\n".join(lines)
+    return json.loads(json_text)
 
 
 def extract_transcript(
@@ -18,10 +31,16 @@ def extract_transcript(
     word_count: int,
 ) -> dict:
     """Extract structured data from a single transcript using Claude."""
-    client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
-
     # Use Opus for large transcripts (>50K words), Sonnet otherwise
     model = settings.synthesis_model if word_count > 50000 else settings.extraction_model
+
+    # Check Redis cache first
+    cached = get_cached_extraction(content, model)
+    if cached is not None:
+        logger.info("Using cached extraction for %s", filename)
+        return {"data": cached, "model_used": model, "cached": True}
+
+    client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
 
     user_prompt = build_extraction_prompt(filename, content, transcript_type, word_count)
 
@@ -35,15 +54,9 @@ def extract_transcript(
     )
 
     response_text = message.content[0].text
+    extraction = _parse_json_response(response_text)
 
-    # Parse JSON from response (handle markdown code blocks)
-    json_text = response_text.strip()
-    if json_text.startswith("```"):
-        lines = json_text.split("\n")
-        lines = lines[1:]  # Remove opening ```json
-        if lines and lines[-1].strip() == "```":
-            lines = lines[:-1]  # Remove closing ```
-        json_text = "\n".join(lines)
+    # Cache the result in Redis
+    set_cached_extraction(content, model, extraction)
 
-    extraction = json.loads(json_text)
-    return {"data": extraction, "model_used": model}
+    return {"data": extraction, "model_used": model, "cached": False}
