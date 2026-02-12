@@ -169,13 +169,19 @@ def _execute_pipeline(db: Session, analysis_id: str, project_id: str,
 
     synthesis = synthesize_extractions(extraction_data, semantic_conflicts=semantic_conflicts)
 
+    analysis.last_checkpoint = "synthesis_complete"
+    db.commit()
+
     # Optional Phase 3: Generate PRD
     if generate_prd_flag:
         logger.info("Generating PRD for analysis %s", analysis_id)
+        synthesis["prd_requested"] = True
         prd_markdown = generate_prd(synthesis)
         synthesis["prd"] = prd_markdown
+        analysis.last_checkpoint = "prd_complete"
+        db.commit()
 
-    analysis.last_checkpoint = "synthesis_complete"
+    analysis.last_checkpoint = "complete"
     analysis.status = "complete"
     analysis.results_json = json.dumps(synthesis)
     analysis.model_used = (

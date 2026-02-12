@@ -13,6 +13,7 @@ class AnalysisResponse(BaseModel):
     status: str
     error_message: str | None
     model_used: str | None
+    last_checkpoint: str | None = None
     tenant_id: str | None
     started_at: datetime | None
     completed_at: datetime | None
@@ -25,6 +26,7 @@ class AnalysisStatusResponse(BaseModel):
     id: str
     status: str
     error_message: str | None = None
+    last_checkpoint: str | None = None
     started_at: datetime | None
     completed_at: datetime | None
 

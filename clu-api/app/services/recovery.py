@@ -129,7 +129,7 @@ def _run_extraction(
 
     if not pending:
         logger.info("All transcripts already extracted, skipping extraction phase")
-        analysis.last_checkpoint = "extraction"
+        analysis.last_checkpoint = "extraction_complete"
         db.commit()
         return
 
@@ -219,7 +219,7 @@ def _run_indexing_and_synthesis(
     )
 
     analysis.results_json = json.dumps(synthesis)
-    analysis.last_checkpoint = "synthesis"
+    analysis.last_checkpoint = "synthesis_complete"
     analysis.model_used = (
         f"extract:{all_extractions[0].model_used if all_extractions else 'unknown'},"
         f"synth:{settings.synthesis_model}"
@@ -234,5 +234,5 @@ def _run_prd_generation(db: Session, analysis: Analysis) -> None:
     prd_markdown = generate_prd(results)
     results["prd"] = prd_markdown
     analysis.results_json = json.dumps(results)
-    analysis.last_checkpoint = "prd"
+    analysis.last_checkpoint = "prd_complete"
     db.commit()
