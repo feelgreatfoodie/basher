@@ -80,65 +80,67 @@ def _execute_incremental(
         else:
             new_transcripts.append(t)
 
-    if not new_transcripts:
-        raise ValueError("No new transcripts to extract. All transcripts already have extractions.")
-
     logger.info(
         "Incremental: %d new transcripts to extract, %d already done",
         len(new_transcripts), existing_count,
     )
 
-    analysis.last_checkpoint = "incremental_extraction_start"
-    db.commit()
+    if new_transcripts:
+        analysis.last_checkpoint = "incremental_extraction_start"
+        db.commit()
 
-    # Extract only new transcripts
-    errors = []
-    max_workers = min(settings.max_concurrent_extractions, len(new_transcripts))
-    with ThreadPoolExecutor(max_workers=max_workers) as pool:
-        futures = {
-            pool.submit(
-                extract_transcript,
-                filename=t.filename,
-                content=t.content,
-                transcript_type=t.transcript_type,
-                word_count=t.word_count,
-            ): t
-            for t in new_transcripts
-        }
+        # Extract only new transcripts
+        errors = []
+        max_workers = min(settings.max_concurrent_extractions, len(new_transcripts))
+        with ThreadPoolExecutor(max_workers=max_workers) as pool:
+            futures = {
+                pool.submit(
+                    extract_transcript,
+                    filename=t.filename,
+                    content=t.content,
+                    transcript_type=t.transcript_type,
+                    word_count=t.word_count,
+                ): t
+                for t in new_transcripts
+            }
 
-        for future in as_completed(futures):
-            transcript = futures[future]
-            try:
-                result = future.result()
-                confidence = score_extraction(result["data"])
-                extraction = Extraction(
-                    transcript_id=transcript.id,
-                    data_json=json.dumps(result["data"]),
-                    confidence=confidence,
-                    model_used=result["model_used"],
-                    tenant_id=transcript.tenant_id,
-                )
-                db.add(extraction)
-                db.commit()
-                logger.info(
-                    "Incremental extracted %s (confidence=%.3f)",
-                    transcript.filename, confidence,
-                )
-            except Exception as e:
-                logger.error(
-                    "Incremental extraction failed for %s: %s",
-                    transcript.filename, e,
-                )
-                errors.append(f"{transcript.filename}: {e}")
+            for future in as_completed(futures):
+                transcript = futures[future]
+                try:
+                    result = future.result()
+                    confidence = score_extraction(result["data"])
+                    extraction = Extraction(
+                        transcript_id=transcript.id,
+                        data_json=json.dumps(result["data"]),
+                        confidence=confidence,
+                        model_used=result["model_used"],
+                        tenant_id=transcript.tenant_id,
+                    )
+                    db.add(extraction)
+                    db.commit()
+                    logger.info(
+                        "Incremental extracted %s (confidence=%.3f)",
+                        transcript.filename, confidence,
+                    )
+                except Exception as e:
+                    logger.error(
+                        "Incremental extraction failed for %s: %s",
+                        transcript.filename, e,
+                    )
+                    errors.append(f"{transcript.filename}: {e}")
 
-    if errors:
-        error_summary = "; ".join(errors)
-        raise RuntimeError(
-            f"Incremental extraction failed for {len(errors)} transcript(s): {error_summary}"
-        )
+        if errors:
+            error_summary = "; ".join(errors)
+            raise RuntimeError(
+                f"Incremental extraction failed for {len(errors)} transcript(s): {error_summary}"
+            )
 
-    analysis.last_checkpoint = "incremental_extraction_complete"
-    db.commit()
+        analysis.last_checkpoint = "incremental_extraction_complete"
+        db.commit()
+    else:
+        logger.info("No new transcripts — skipping extraction, re-running synthesis only")
+        analysis.last_checkpoint = "incremental_extraction_skipped"
+        db.commit()
 
     # Index new extractions into ChromaDB
     all_extractions = (
@@ -181,6 +183,11 @@ def _execute_incremental(
         synthesis["prd"] = prd_markdown
         analysis.last_checkpoint = "incremental_prd_complete"
         db.commit()
+
+    # Add incremental metadata
+    synthesis["incremental"] = True
+    synthesis["new_transcripts"] = len(new_transcripts)
+    synthesis["total_transcripts"] = len(transcripts)
 
     analysis.status = "complete"
     analysis.results_json = json.dumps(synthesis)

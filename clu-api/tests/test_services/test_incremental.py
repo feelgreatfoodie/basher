@@ -5,7 +5,7 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 
-from app.services.incremental import run_incremental_analysis
+from app.services.incremental import _execute_incremental
 
 
 MOCK_EXTRACTION = {
@@ -31,7 +31,7 @@ MOCK_SYNTHESIS = {
 }
 
 
-@patch("app.services.incremental.synthesize_extractions", return_value=MOCK_SYNTHESIS)
+@patch("app.services.incremental.synthesize_extractions")
 @patch("app.services.incremental.find_semantic_conflicts", return_value=[])
 @patch("app.services.incremental.index_extraction")
 @patch("app.services.incremental.score_extraction", return_value=0.85)
@@ -41,6 +41,8 @@ def test_incremental_extracts_only_new(
 ):
     """Incremental should only extract transcripts without existing extractions."""
     from app.models import Project, Transcript, Extraction, Analysis
+
+    mock_synth.return_value = MOCK_SYNTHESIS.copy()
 
     # Create project with 2 transcripts
     project = Project(name="Test", tenant_id="tenant-test-001")
@@ -75,9 +77,8 @@ def test_incremental_extracts_only_new(
         "data": MOCK_EXTRACTION, "model_used": "sonnet", "cached": False,
     }
 
-    # Patch SessionLocal to return our test session
-    with patch("app.services.incremental.SessionLocal", return_value=db):
-        run_incremental_analysis(analysis.id, project.id)
+    # Call _execute_incremental directly (avoids SessionLocal patching issues)
+    _execute_incremental(db, analysis.id, project.id)
 
     # Should have only extracted the new transcript
     assert mock_extract.call_count == 1
@@ -99,7 +100,7 @@ def test_incremental_extracts_only_new(
     assert results["total_transcripts"] == 2
 
 
-@patch("app.services.incremental.synthesize_extractions", return_value=MOCK_SYNTHESIS)
+@patch("app.services.incremental.synthesize_extractions")
 @patch("app.services.incremental.find_semantic_conflicts", return_value=[])
 @patch("app.services.incremental.index_extraction")
 def test_incremental_no_new_transcripts_reruns_synthesis(
@@ -107,6 +108,8 @@ def test_incremental_no_new_transcripts_reruns_synthesis(
 ):
     """When all transcripts already extracted, skip extraction but re-run synthesis."""
     from app.models import Project, Transcript, Extraction, Analysis
+
+    mock_synth.return_value = MOCK_SYNTHESIS.copy()
 
     project = Project(name="Test", tenant_id="tenant-test-001")
     db.add(project)
@@ -130,8 +133,7 @@ def test_incremental_no_new_transcripts_reruns_synthesis(
     db.add(analysis)
     db.commit()
 
-    with patch("app.services.incremental.SessionLocal", return_value=db):
-        run_incremental_analysis(analysis.id, project.id)
+    _execute_incremental(db, analysis.id, project.id)
 
     # No extraction calls — all already done
     # Synthesis still called with existing data
