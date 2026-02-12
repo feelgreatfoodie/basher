@@ -104,10 +104,11 @@ validate_transcripts_dir() {
     fi
 
     local file_count
-    file_count=$(find "$dir" -maxdepth 1 \( -name "*.txt" -o -name "*.md" \) -not -name "manifest.json" 2>/dev/null | wc -l | tr -d ' ')
+    file_count=$(find "$dir" -maxdepth 1 \( -name "*.txt" -o -name "*.md" -o -name "*.pdf" -o -name "*.docx" \) -not -name "manifest.json" 2>/dev/null | wc -l | tr -d ' ')
 
     if [[ "$file_count" -eq 0 ]]; then
-        echo "Error: No .txt or .md files found in $dir" >&2
+        echo "Error: No supported files found in $dir" >&2
+        echo "Supported formats: .txt, .md, .pdf, .docx" >&2
         echo "Place your transcripts in $dir and try again." >&2
         return 1
     fi
@@ -166,7 +167,7 @@ generate_manifest() {
       \"model\": \"$model\"
     }"
 
-    done < <(find "$dir" -maxdepth 1 \( -name "*.txt" -o -name "*.md" \) -not -name "manifest.json" | sort)
+    done < <(find "$dir" -maxdepth 1 \( -name "*.txt" -o -name "*.md" -o -name "*.pdf" -o -name "*.docx" \) -not -name "manifest.json" | sort)
 
     # Write manifest
     cat > "$manifest_file" << EOF

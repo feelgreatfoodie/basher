@@ -11,6 +11,7 @@ from app.models import Analysis, Transcript, Extraction
 from app.services.confidence import score_extraction
 from app.services.embeddings import index_extraction, find_semantic_conflicts
 from app.services.extractor import extract_transcript
+from app.services.prd_generator import generate_prd
 from app.services.synthesizer import synthesize_extractions
 
 logger = logging.getLogger(__name__)
@@ -47,7 +48,7 @@ def _execute_incremental(
     db: Session,
     analysis_id: str,
     project_id: str,
-    base_analysis_id: str,
+    generate_prd_flag: bool = False,
 ) -> None:
     """Core incremental logic: extract only new transcripts, re-synthesize all."""
     from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -170,6 +171,17 @@ def _execute_incremental(
     synthesis = synthesize_extractions(extraction_data, semantic_conflicts=semantic_conflicts)
 
     analysis.last_checkpoint = "incremental_synthesis_complete"
+    db.commit()
+
+    # Optional: Generate PRD
+    if generate_prd_flag:
+        logger.info("Generating PRD for incremental analysis %s", analysis_id)
+        synthesis["prd_requested"] = True
+        prd_markdown = generate_prd(synthesis)
+        synthesis["prd"] = prd_markdown
+        analysis.last_checkpoint = "incremental_prd_complete"
+        db.commit()
+
     analysis.status = "complete"
     analysis.results_json = json.dumps(synthesis)
     analysis.model_used = (

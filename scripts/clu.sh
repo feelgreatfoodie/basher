@@ -24,6 +24,7 @@ Usage: clu.sh [OPTIONS]
 Options:
   -h, --help        Show this help message and exit
   --prd             Generate Basher-compatible PRD after analysis
+  --wizard          Launch interactive conflict resolution wizard
   --dir PATH        Path to transcripts directory (default: ./clu/transcripts)
   --no-mcp-check    Skip CacheBash MCP configuration check
 
@@ -35,7 +36,7 @@ Description:
   Pipeline: Transcripts -> Extract -> Synthesize -> Reports [-> PRD]
 
 Prerequisites:
-  - Text files (.txt, .md) in ./clu/transcripts/
+  - Transcript files (.txt, .md, .pdf, .docx) in ./clu/transcripts/
   - Claude Code CLI must be installed and authenticated
   - CacheBash MCP server should be configured (for mobile updates)
 
@@ -53,6 +54,7 @@ Output:
 Examples:
   clu.sh                   # Analyze transcripts in ./clu/transcripts/
   clu.sh --prd             # Analyze + generate Basher PRD
+  clu.sh --wizard          # Resolve conflicts interactively
   clu.sh --dir ~/notes     # Use custom transcript directory
   clu.sh --help            # Show this help message
 
@@ -68,6 +70,7 @@ EOF
 BASHER_GLOBAL_DIR="${BASHER_HOME:-$HOME/.basher}"
 TRANSCRIPT_DIR="./clu/transcripts"
 GENERATE_PRD=false
+RUN_WIZARD=false
 CHECK_MCP=true
 
 # Colors for output
@@ -90,6 +93,10 @@ parse_args() {
                 ;;
             --prd)
                 GENERATE_PRD=true
+                shift
+                ;;
+            --wizard)
+                RUN_WIZARD=true
                 shift
                 ;;
             --dir)
@@ -191,17 +198,18 @@ validate_transcripts() {
 
     if [[ ! -d "$TRANSCRIPT_DIR" ]]; then
         log_error "Transcripts directory not found: $TRANSCRIPT_DIR"
-        log_error "Create it and add your .txt/.md files:"
+        log_error "Create it and add your transcript files:"
         log_error "  mkdir -p $TRANSCRIPT_DIR"
         log_error "  cp your-notes.txt $TRANSCRIPT_DIR/"
         exit 1
     fi
 
     local file_count
-    file_count=$(find "$TRANSCRIPT_DIR" -maxdepth 1 \( -name "*.txt" -o -name "*.md" \) -not -name "manifest.json" 2>/dev/null | wc -l | tr -d ' ')
+    file_count=$(find "$TRANSCRIPT_DIR" -maxdepth 1 \( -name "*.txt" -o -name "*.md" -o -name "*.pdf" -o -name "*.docx" \) -not -name "manifest.json" 2>/dev/null | wc -l | tr -d ' ')
 
     if [[ "$file_count" -eq 0 ]]; then
-        log_error "No .txt or .md files found in $TRANSCRIPT_DIR"
+        log_error "No supported files found in $TRANSCRIPT_DIR"
+        log_error "Supported formats: .txt, .md, .pdf, .docx"
         log_error "Add your transcripts and try again."
         exit 1
     fi
@@ -336,7 +344,7 @@ print_results() {
     echo ""
     echo "Next steps:"
     echo "  1. Review ./clu/SUMMARY.md for key findings"
-    echo "  2. Resolve conflicts in ./clu/conflicts.md"
+    echo "  2. Resolve conflicts: clu.sh --wizard"
     echo "  3. Define gaps in ./clu/gaps.md"
 
     if [[ "$GENERATE_PRD" == "true" ]]; then
@@ -362,6 +370,22 @@ main() {
     echo -e "${CYAN}|     CLU - Multi-Transcript Analysis & Synthesis               |${NC}"
     echo -e "${CYAN}+==============================================================+${NC}"
     echo ""
+
+    # Wizard mode: skip full pipeline, just resolve conflicts
+    if [[ "$RUN_WIZARD" == "true" ]]; then
+        local wizard_script
+        local script_dir
+        script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+        wizard_script="$script_dir/clu-wizard.sh"
+        if [[ ! -f "$wizard_script" ]]; then
+            wizard_script="$BASHER_GLOBAL_DIR/scripts/clu-wizard.sh"
+        fi
+        if [[ ! -f "$wizard_script" ]]; then
+            log_error "clu-wizard.sh not found"
+            exit 1
+        fi
+        exec bash "$wizard_script" --dir ./clu
+    fi
 
     load_config
     check_mcp_config
