@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+import json
+
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -9,6 +11,8 @@ from app.schemas import (
     AnalysisStatusResponse,
     AnalysisResultsResponse,
 )
+from app.services.pipeline import run_analysis_pipeline
+from app.services.prd_generator import generate_prd as generate_prd_service
 
 router = APIRouter(prefix="/projects/{project_id}", tags=["analysis"])
 
@@ -16,6 +20,7 @@ router = APIRouter(prefix="/projects/{project_id}", tags=["analysis"])
 @router.post("/analyze", response_model=AnalysisResponse, status_code=202)
 def trigger_analysis(
     project_id: str,
+    background_tasks: BackgroundTasks,
     data: AnalysisTriggerRequest | None = None,
     db: Session = Depends(get_db),
 ):
@@ -28,7 +33,7 @@ def trigger_analysis(
     db.commit()
     db.refresh(analysis)
 
-    # Background processing will be wired in Commit 5
+    background_tasks.add_task(run_analysis_pipeline, analysis.id, project_id)
     return analysis
 
 
@@ -80,7 +85,6 @@ def get_analysis_by_type(project_id: str, result_type: str, db: Session = Depend
     if analysis.status != "complete":
         raise HTTPException(status_code=409, detail=f"Analysis status is '{analysis.status}', not complete")
 
-    import json
     results = json.loads(analysis.results_json) if analysis.results_json else {}
     section = results.get(result_type)
     if section is None:
@@ -104,5 +108,6 @@ def generate_prd(project_id: str, db: Session = Depends(get_db)):
     if not analysis:
         raise HTTPException(status_code=409, detail="No completed analysis found. Run analysis first.")
 
-    # PRD generation will be wired in Commit 5
-    return {"status": "accepted", "message": "PRD generation queued"}
+    results = json.loads(analysis.results_json) if analysis.results_json else {}
+    prd_markdown = generate_prd_service(results)
+    return {"status": "complete", "prd": prd_markdown}
