@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.router import api_router
 from app.config import settings
+from app.middleware.auth import AuthMiddleware
 
 
 @asynccontextmanager
@@ -15,10 +16,12 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="CLU API",
     description="Multi-transcript analysis and synthesis engine",
-    version="0.3.0",
+    version="0.4.0",
     lifespan=lifespan,
 )
 
+# Middleware stack (order matters: last added = first executed)
+# 1. CORS (outermost)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -26,6 +29,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+# 2. Authentication
+app.add_middleware(AuthMiddleware)
 
 
 app.include_router(api_router, prefix=settings.api_v1_prefix)

@@ -1,6 +1,6 @@
 [project]
 name = "clu-api"
-version = "0.3.0"
+version = "0.4.0"
 description = "CLU API — Multi-transcript analysis and synthesis microservice"
 requires-python = ">=3.11"
 dependencies = [
