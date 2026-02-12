@@ -68,34 +68,6 @@ def get_analysis_results(project_id: str, db: Session = Depends(get_db)):
     return analysis
 
 
-@router.get("/analysis/{result_type}")
-def get_analysis_by_type(project_id: str, result_type: str, db: Session = Depends(get_db)):
-    valid_types = [
-        "summary", "conflicts", "gaps", "decisions",
-        "requirements", "stakeholders", "action-items",
-    ]
-    if result_type not in valid_types:
-        raise HTTPException(status_code=400, detail=f"Invalid result type. Must be one of: {valid_types}")
-
-    analysis = (
-        db.query(Analysis)
-        .filter(Analysis.project_id == project_id)
-        .order_by(Analysis.created_at.desc())
-        .first()
-    )
-    if not analysis:
-        raise HTTPException(status_code=404, detail="No analysis found for this project")
-    if analysis.status != "complete":
-        raise HTTPException(status_code=409, detail=f"Analysis status is '{analysis.status}', not complete")
-
-    results = json.loads(analysis.results_json) if analysis.results_json else {}
-    section = results.get(result_type)
-    if section is None:
-        raise HTTPException(status_code=404, detail=f"No '{result_type}' section in analysis results")
-
-    return {"type": result_type, "data": section}
-
-
 @router.get("/analysis/confidence")
 def get_extraction_confidence(project_id: str, db: Session = Depends(get_db)):
     """Get confidence scores for all extractions in a project."""
@@ -132,6 +104,34 @@ def get_extraction_confidence(project_id: str, db: Session = Depends(get_db)):
         "average_confidence": round(avg_confidence, 3),
         "extractions": scores,
     }
+
+
+@router.get("/analysis/{result_type}")
+def get_analysis_by_type(project_id: str, result_type: str, db: Session = Depends(get_db)):
+    valid_types = [
+        "summary", "conflicts", "gaps", "decisions",
+        "requirements", "stakeholders", "action-items",
+    ]
+    if result_type not in valid_types:
+        raise HTTPException(status_code=400, detail=f"Invalid result type. Must be one of: {valid_types}")
+
+    analysis = (
+        db.query(Analysis)
+        .filter(Analysis.project_id == project_id)
+        .order_by(Analysis.created_at.desc())
+        .first()
+    )
+    if not analysis:
+        raise HTTPException(status_code=404, detail="No analysis found for this project")
+    if analysis.status != "complete":
+        raise HTTPException(status_code=409, detail=f"Analysis status is '{analysis.status}', not complete")
+
+    results = json.loads(analysis.results_json) if analysis.results_json else {}
+    section = results.get(result_type)
+    if section is None:
+        raise HTTPException(status_code=404, detail=f"No '{result_type}' section in analysis results")
+
+    return {"type": result_type, "data": section}
 
 
 @router.post("/prd", status_code=202)
