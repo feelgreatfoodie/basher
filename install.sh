@@ -131,7 +131,7 @@ backup_existing() {
 
 create_directories() {
     log_step "Creating directory structure..."
-    mkdir -p "$BASHER_HOME"/{scripts,skills/prd,skills/basher-convert,templates,lib,archive,prompts}
+    mkdir -p "$BASHER_HOME"/{scripts,skills/prd,skills/basher-convert,skills/clu,skills/clu-analyze,skills/clu-prd,templates,lib,archive,prompts,docs}
 }
 
 install_from_local() {
@@ -141,22 +141,33 @@ install_from_local() {
     cp "$SOURCE_DIR/scripts/basher.sh" "$BASHER_HOME/"
     cp "$SOURCE_DIR/scripts/basher-init.sh" "$BASHER_HOME/"
     cp "$SOURCE_DIR/scripts/package.sh" "$BASHER_HOME/"
+    cp "$SOURCE_DIR/scripts/clu.sh" "$BASHER_HOME/"
+    cp "$SOURCE_DIR/scripts/kickoff-clu.sh" "$BASHER_HOME/"
 
     # Copy prompt
     cp "$SOURCE_DIR/prompt.md" "$BASHER_HOME/"
 
-    # Copy prompts (orchestrator and subagent)
+    # Copy prompts (orchestrator, subagent, and CLU prompts)
     cp "$SOURCE_DIR/prompts/"*.md "$BASHER_HOME/prompts/"
 
     # Copy lib
     cp "$SOURCE_DIR/lib/detect-stack.sh" "$BASHER_HOME/lib/"
+    cp "$SOURCE_DIR/lib/transcript-utils.sh" "$BASHER_HOME/lib/"
 
     # Copy skills
     cp "$SOURCE_DIR/skills/prd/prompt.md" "$BASHER_HOME/skills/prd/"
     cp "$SOURCE_DIR/skills/basher-convert/prompt.md" "$BASHER_HOME/skills/basher-convert/"
+    cp "$SOURCE_DIR/skills/clu/prompt.md" "$BASHER_HOME/skills/clu/"
+    cp "$SOURCE_DIR/skills/clu-analyze/prompt.md" "$BASHER_HOME/skills/clu-analyze/"
+    cp "$SOURCE_DIR/skills/clu-prd/prompt.md" "$BASHER_HOME/skills/clu-prd/"
 
     # Copy templates
     cp "$SOURCE_DIR/templates/"* "$BASHER_HOME/templates/"
+
+    # Copy docs
+    if [[ -d "$SOURCE_DIR/docs" ]]; then
+        cp "$SOURCE_DIR/docs/"* "$BASHER_HOME/docs/" 2>/dev/null || true
+    fi
 
     # Initialize global learnings file if it doesn't exist
     if [[ ! -f "$BASHER_HOME/learnings.md" ]]; then
@@ -178,23 +189,37 @@ install_from_remote() {
     # Download prompt
     curl -fsSL "$BASE_URL/prompt.md" -o "$BASHER_HOME/prompt.md"
 
-    # Download prompts (orchestrator and subagent for parallel mode)
+    # Download prompts (orchestrator, subagent, and CLU prompts)
     curl -fsSL "$BASE_URL/prompts/orchestrator.md" -o "$BASHER_HOME/prompts/orchestrator.md"
     curl -fsSL "$BASE_URL/prompts/subagent-story.md" -o "$BASHER_HOME/prompts/subagent-story.md"
+    curl -fsSL "$BASE_URL/prompts/clu-orchestrator.md" -o "$BASHER_HOME/prompts/clu-orchestrator.md"
+    curl -fsSL "$BASE_URL/prompts/clu-subagent-extract.md" -o "$BASHER_HOME/prompts/clu-subagent-extract.md"
 
     # Download lib
     curl -fsSL "$BASE_URL/lib/detect-stack.sh" -o "$BASHER_HOME/lib/detect-stack.sh"
+    curl -fsSL "$BASE_URL/lib/transcript-utils.sh" -o "$BASHER_HOME/lib/transcript-utils.sh"
 
     # Download skills
     curl -fsSL "$BASE_URL/skills/prd/prompt.md" -o "$BASHER_HOME/skills/prd/prompt.md"
     curl -fsSL "$BASE_URL/skills/basher-convert/prompt.md" -o "$BASHER_HOME/skills/basher-convert/prompt.md"
+    curl -fsSL "$BASE_URL/skills/clu/prompt.md" -o "$BASHER_HOME/skills/clu/prompt.md"
+    curl -fsSL "$BASE_URL/skills/clu-analyze/prompt.md" -o "$BASHER_HOME/skills/clu-analyze/prompt.md"
+    curl -fsSL "$BASE_URL/skills/clu-prd/prompt.md" -o "$BASHER_HOME/skills/clu-prd/prompt.md"
+
+    # Download scripts (CLU)
+    curl -fsSL "$BASE_URL/scripts/clu.sh" -o "$BASHER_HOME/clu.sh"
+    curl -fsSL "$BASE_URL/scripts/kickoff-clu.sh" -o "$BASHER_HOME/kickoff-clu.sh"
 
     # Download templates
     curl -fsSL "$BASE_URL/templates/basher.config.json" -o "$BASHER_HOME/templates/basher.config.json"
+    curl -fsSL "$BASE_URL/templates/clu.config.json" -o "$BASHER_HOME/templates/clu.config.json"
     curl -fsSL "$BASE_URL/templates/prd.json.example" -o "$BASHER_HOME/templates/prd.json.example"
     curl -fsSL "$BASE_URL/templates/prd.md.example" -o "$BASHER_HOME/templates/prd.md.example"
     curl -fsSL "$BASE_URL/templates/transcript.example.txt" -o "$BASHER_HOME/templates/transcript.example.txt"
     curl -fsSL "$BASE_URL/templates/learnings.md" -o "$BASHER_HOME/templates/learnings.md"
+
+    # Download docs
+    curl -fsSL "$BASE_URL/docs/CLU-GUIDE.md" -o "$BASHER_HOME/docs/CLU-GUIDE.md"
 
     # Initialize global learnings file if it doesn't exist
     if [[ ! -f "$BASHER_HOME/learnings.md" ]]; then
@@ -207,7 +232,10 @@ set_permissions() {
     chmod +x "$BASHER_HOME/basher.sh"
     chmod +x "$BASHER_HOME/basher-init.sh"
     chmod +x "$BASHER_HOME/package.sh"
+    chmod +x "$BASHER_HOME/clu.sh"
+    chmod +x "$BASHER_HOME/kickoff-clu.sh"
     chmod +x "$BASHER_HOME/lib/detect-stack.sh"
+    chmod +x "$BASHER_HOME/lib/transcript-utils.sh"
 }
 
 detect_shell() {

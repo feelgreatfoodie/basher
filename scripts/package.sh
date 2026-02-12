@@ -41,6 +41,13 @@ cp "$BASHER_HOME/install.sh" "$TEMP_DIR/.basher/"
 cp "$BASHER_HOME/README.md" "$TEMP_DIR/.basher/"
 cp "$BASHER_HOME/package.sh" "$TEMP_DIR/.basher/"
 
+# Copy CLU scripts
+cp "$BASHER_HOME/clu.sh" "$TEMP_DIR/.basher/" 2>/dev/null || true
+cp "$BASHER_HOME/kickoff-clu.sh" "$TEMP_DIR/.basher/" 2>/dev/null || true
+
+# Copy prompts
+cp -r "$BASHER_HOME/prompts" "$TEMP_DIR/.basher/"
+
 # Copy lib
 cp -r "$BASHER_HOME/lib" "$TEMP_DIR/.basher/"
 
@@ -49,6 +56,11 @@ cp -r "$BASHER_HOME/skills" "$TEMP_DIR/.basher/"
 
 # Copy templates
 cp -r "$BASHER_HOME/templates" "$TEMP_DIR/.basher/"
+
+# Copy docs
+if [[ -d "$BASHER_HOME/docs" ]]; then
+    cp -r "$BASHER_HOME/docs" "$TEMP_DIR/.basher/"
+fi
 
 # Create empty archive directory
 mkdir -p "$TEMP_DIR/.basher/archive"

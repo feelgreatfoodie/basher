@@ -131,6 +131,11 @@ echo -e "${BLUE}[init]${NC} Creating ./basher directory..."
 mkdir -p ./basher/archive
 mkdir -p ./basher/prompts
 
+# Create CLU directory structure
+echo -e "${BLUE}[init]${NC} Creating ./clu directories..."
+mkdir -p ./clu/transcripts
+mkdir -p ./clu/extractions
+
 # Copy config template
 echo -e "${BLUE}[init]${NC} Creating configuration..."
 if [[ -f "$BASHER_GLOBAL/templates/basher.config.json" ]]; then

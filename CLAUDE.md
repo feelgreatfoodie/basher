@@ -8,6 +8,8 @@ Basher is an autonomous code generation system that uses Claude Code to implemen
 
 **New in v3:** Hybrid model architecture (Opus orchestrator + Sonnet subagents), continuous interrupt polling, dynamic sprint insertion, and enhanced Opus code review.
 
+**New: CLU** (Codified Likeness Utility) — Multi-transcript analysis and synthesis engine. Ingests 10+ mixed-format transcripts, extracts structured data, cross-references across sources, and produces actionable reports. Optionally generates a Basher-compatible PRD.
+
 ## Repository Structure
 
 ```
@@ -15,17 +17,32 @@ basher/
 ├── scripts/                    # Core execution scripts
 │   ├── basher.sh              # Main execution loop (sequential + parallel modes)
 │   ├── basher-init.sh         # Project initialization
-│   └── package.sh             # Create shareable package
+│   ├── package.sh             # Create shareable package
+│   ├── clu.sh                 # CLU execution script
+│   └── kickoff-clu.sh         # CLU continuous AFK build (v0.1→v1.0)
 ├── prompts/                    # Agent prompts for parallel mode
 │   ├── orchestrator.md        # Main orchestrator prompt
 │   └── subagent-story.md      # Subagent prompt for parallel work
+│   ├── clu-orchestrator.md    # CLU orchestrator (extraction + synthesis)
+│   └── clu-subagent-extract.md # CLU extraction subagent
 ├── skills/                     # Claude Code skills (prompt templates)
 │   ├── prd/                   # /prd - Generate PRD from notes
 │   ├── basher-convert/        # /basher-convert - PRD to JSON
 │   ├── compose-prd/           # /compose-prd - Merge domain PRDs
 │   ├── extract-domain/        # /extract-domain - Extract from codebase
 │   ├── kickoff/               # /kickoff - Interactive project setup
-│   └── verify-blueprint/      # /verify-blueprint - Validate blueprint
+│   ├── verify-blueprint/      # /verify-blueprint - Validate blueprint
+│   ├── clu/                   # /clu - Full CLU pipeline (extract + synthesize + PRD)
+│   ├── clu-analyze/           # /clu-analyze - Extract + synthesize only
+│   └── clu-prd/               # /clu-prd - Generate PRD from CLU analysis
+├── lib/                        # Shared bash libraries
+│   ├── detect-stack.sh        # Tech stack auto-detection
+│   └── transcript-utils.sh    # CLU transcript utilities
+├── docs/                       # Documentation
+│   └── CLU-GUIDE.md           # CLU user guide + learning module
+├── templates/                  # Configuration templates
+│   ├── basher.config.json     # Basher config template
+│   └── clu.config.json        # CLU config template
 ├── saas-blueprint/             # Complete SaaS reference blueprint (separate git repo)
 │   ├── domains/               # 8 domain extractions
 │   ├── architecture/          # System design docs
@@ -184,6 +201,109 @@ During parallel execution, the orchestrator polls for interrupts every 2 minutes
 | `/extract-domain` | Extract patterns from existing codebase |
 | `/kickoff` | Interactive Q&A for new project setup |
 | `/verify-blueprint` | Validate blueprint completeness |
+| `/clu` | Full CLU pipeline: extract + synthesize + optional PRD |
+| `/clu-analyze` | Extract + synthesize only (no PRD generation) |
+| `/clu-prd` | Generate Basher PRD from existing CLU analysis |
+
+## CLU — Multi-Transcript Analysis & Synthesis
+
+CLU (Codified Likeness Utility) ingests multiple text transcripts, extracts structured data from each, cross-references across all sources, and produces actionable reports.
+
+### Pipeline
+
+```
+./clu/transcripts/          Phase 1: Extract        Phase 2: Synthesize       Phase 3: PRD (optional)
+ ├── meeting-1.txt    ──►  Per-transcript     ──►  Cross-reference      ──►  Basher-compatible
+ ├── interview-2.txt       extraction JSONs         analysis + reports        prd.md / prd.json
+ └── spec-doc.txt          (Sonnet, parallel)       (Opus, single pass)
+```
+
+### CLU Output Files
+
+| File | Contents | Priority |
+|------|----------|----------|
+| `SUMMARY.md` | Executive summary — conflicts count, consensus highlights | Level 1: Act on this |
+| `conflicts.md` | Contradictions with both positions + source citations | Level 1: Act on this |
+| `gaps.md` | Referenced but undefined concepts | Level 1: Act on this |
+| `decisions.md` | Chronological decision log with confirmation status | Level 2: Verified consensus |
+| `requirements.md` | Consolidated requirements ranked by consensus | Level 2: Verified consensus |
+| `stakeholders.md` | Who cares about what, decision authority | Level 2: Verified consensus |
+| `action-items.md` | Action items with owners, sources, status | Level 2: Verified consensus |
+| `analysis.json` | Full structured synthesis (machine-readable) | Level 3: Reference |
+
+### CLU Configuration
+
+`clu.config.json` options:
+
+```json
+{
+  "clu": {
+    "maxConcurrent": 3,
+    "extractorModel": "sonnet",
+    "synthesizerModel": "opus",
+    "autoManifest": true,
+    "prdGeneration": false,
+    "conflictHandling": "open-questions"
+  }
+}
+```
+
+| Setting | Default | Purpose |
+|---------|---------|---------|
+| `maxConcurrent` | 3 | Max parallel extraction subagents |
+| `extractorModel` | sonnet | Model for per-transcript extraction |
+| `synthesizerModel` | opus | Model for cross-reference synthesis |
+| `autoManifest` | true | Auto-generate transcript manifest |
+| `prdGeneration` | false | Generate Basher PRD after analysis |
+| `conflictHandling` | open-questions | How to handle conflicts: `open-questions`, `strongest-consensus`, `ask-user` |
+
+### CLU Project Directory Structure
+
+```
+./clu/
+├── transcripts/              # User drops text files here
+│   ├── meeting-kickoff.txt
+│   └── manifest.json         # Auto-generated metadata
+├── extractions/              # Per-transcript extraction JSONs
+├── SUMMARY.md                # Executive summary
+├── conflicts.md              # Contradictions needing resolution
+├── gaps.md                   # Referenced but undefined concepts
+├── decisions.md              # Chronological decision log
+├── requirements.md           # Ranked requirements
+├── stakeholders.md           # Stakeholder map
+├── action-items.md           # Action items with owners
+├── analysis.json             # Full structured synthesis
+└── clu.config.json           # CLU-specific config
+```
+
+### Running CLU
+
+```bash
+# Via Claude Code skill
+claude /clu                    # Full pipeline
+claude /clu-analyze            # Analysis only (no PRD)
+claude /clu-prd                # Generate PRD from existing analysis
+
+# Via bash script
+~/.basher/clu.sh               # Full pipeline
+~/.basher/clu.sh --prd         # Include PRD generation
+~/.basher/clu.sh --dir ~/notes # Custom transcript directory
+```
+
+### Testing CLU
+
+```bash
+# Syntax validation
+bash -n scripts/clu.sh
+bash -n lib/transcript-utils.sh
+
+# Initialize CLU directories
+~/.basher/basher-init.sh       # Creates ./clu/transcripts/ and ./clu/extractions/
+
+# Run analysis
+cp your-notes.txt ./clu/transcripts/
+claude /clu-analyze
+```
 
 ## The saas-blueprint
 
@@ -364,4 +484,4 @@ Issues are handled by severity:
 - **Medium** - Spawn cleanup subagent
 - **Major** - Ask user via CacheBash
 
-*Last updated: 2026-02-02*
+*Last updated: 2026-02-11*

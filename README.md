@@ -48,7 +48,9 @@ That's it. Basher builds your app while you grab coffee.
 10. [Sharing with Teammates](#sharing-with-teammates)
 11. [Troubleshooting](#troubleshooting)
 12. [FAQ](#faq)
-13. [Contributing](#contributing)
+13. [CLU — Multi-Transcript Analysis & Synthesis](#clu--multi-transcript-analysis--synthesis)
+14. [The Grid — Ecosystem](#the-grid--ecosystem)
+15. [Contributing](#contributing)
 
 ---
 
@@ -935,6 +937,101 @@ Basher works best with focused features. For large projects:
 - Break work into phases
 - Create separate PRDs for each phase
 - Run Basher for each phase sequentially
+
+---
+
+## CLU — Multi-Transcript Analysis & Synthesis
+
+> **Turn 10 messy transcripts into one clear build plan.**
+
+CLU (Codified Likeness Utility) is Basher's companion tool for analyzing meeting notes, interview transcripts, Slack threads, and spec documents. It extracts structured data from each source, cross-references across all of them, and produces actionable reports.
+
+### The Full Pipeline
+
+```
+Transcripts  ──►  CLU (analysis)  ──►  PRD  ──►  Basher (autonomous coding)  ──►  Working code
+```
+
+### Quick Start
+
+```bash
+# 1. Initialize CLU in your project (done automatically by basher-init.sh)
+mkdir -p ./clu/transcripts
+
+# 2. Add your transcripts
+cp meeting-notes.txt ./clu/transcripts/
+cp design-review.txt ./clu/transcripts/
+cp slack-thread.txt ./clu/transcripts/
+
+# 3. Run CLU analysis
+claude /clu              # Full pipeline (extract + synthesize + optional PRD)
+# or
+claude /clu-analyze      # Analysis only
+# or
+~/.basher/clu.sh         # Via bash script
+```
+
+### What CLU Produces
+
+| File | What It Contains |
+|------|-----------------|
+| `./clu/SUMMARY.md` | Executive summary with key findings |
+| `./clu/conflicts.md` | Contradictions between sources (needs resolution) |
+| `./clu/gaps.md` | Referenced but undefined concepts |
+| `./clu/decisions.md` | Chronological decision log |
+| `./clu/requirements.md` | Requirements ranked by consensus |
+| `./clu/stakeholders.md` | Who cares about what |
+| `./clu/action-items.md` | Action items with owners |
+| `./clu/analysis.json` | Full structured synthesis |
+
+### CLU Skills
+
+| Skill | Purpose |
+|-------|---------|
+| `/clu` | End-to-end: extract + synthesize + optionally generate Basher PRD |
+| `/clu-analyze` | Extract + synthesize only (no PRD) |
+| `/clu-prd` | Generate Basher-compatible PRD from existing CLU analysis |
+
+### How CLU Works
+
+1. **Ingest**: Drop `.txt` or `.md` files into `./clu/transcripts/`
+2. **Extract**: Sonnet subagents process each transcript in parallel, extracting participants, decisions, requirements, action items, risks, and more into structured JSON
+3. **Synthesize**: Opus orchestrator cross-references all extractions — finding consensus, detecting conflicts, tracking decisions, deduplicating stakeholders, and identifying gaps
+4. **Report**: Generates markdown reports and a machine-readable `analysis.json`
+5. **PRD** (optional): Converts analysis into a Basher-compatible PRD for autonomous code generation
+
+### CLU Configuration
+
+Create `./clu/clu.config.json` to customize behavior:
+
+```json
+{
+  "clu": {
+    "maxConcurrent": 3,
+    "extractorModel": "sonnet",
+    "synthesizerModel": "opus",
+    "autoManifest": true,
+    "prdGeneration": false,
+    "conflictHandling": "open-questions"
+  }
+}
+```
+
+For detailed documentation, see [CLU Guide](docs/CLU-GUIDE.md).
+
+---
+
+## The Grid — Ecosystem
+
+Basher is part of **The Grid** — a suite of tools for autonomous software development:
+
+| Tool | Inspired By | Purpose |
+|------|-------------|---------|
+| **Basher** | Bash (Tron) | Autonomous code generation from PRDs |
+| **CLU** | CLU (Tron) | Multi-transcript analysis & synthesis |
+| **CacheBash** | Cash (Tron) | Mobile communication layer for AFK mode |
+
+The full pipeline: **CLU** turns conversations into requirements → **Basher** turns requirements into code → **CacheBash** keeps you in the loop from your phone.
 
 ---
 
