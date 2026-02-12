@@ -619,7 +619,7 @@ run_version() {
     # Launch Claude session
     log_info "Launching Claude session for $version..."
     cd "$REPO_DIR"
-    claude --prompt-file "$prompt_file" --dangerously-skip-permissions
+    cat "$prompt_file" | claude -p --dangerously-skip-permissions
 
     # After session ends, verify commits were made
     local commit_count

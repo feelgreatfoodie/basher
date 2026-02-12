@@ -132,9 +132,73 @@ Watch the terminal to see progress, or come back later!
 
 ---
 
+---
+
+## Alternative Path: Start with CLU (Multiple Transcripts)
+
+If you have multiple meeting notes, interviews, or spec documents, use CLU first to analyze and synthesize them into a single PRD.
+
+### Step 1: Set Up Transcripts
+
+```bash
+mkdir my-app && cd my-app && git init
+~/.basher/basher-init.sh
+
+# Drop your transcripts into the CLU directory
+cp meeting-notes.txt design-review.txt stakeholder-feedback.md ./clu/transcripts/
+```
+
+### Step 2: Analyze with CLU
+
+```bash
+claude
+```
+
+Inside Claude, type:
+```
+/clu-analyze
+```
+
+CLU extracts structured data from each transcript, cross-references across all sources, and generates reports (conflicts, gaps, decisions, requirements).
+
+### Step 3: Review Conflicts
+
+```bash
+cat ./clu/SUMMARY.md      # Executive summary
+cat ./clu/conflicts.md     # Contradictions to resolve
+```
+
+### Step 4: Generate PRD from Analysis
+
+Still in Claude:
+```
+/clu-prd
+```
+
+### Step 5: Convert and Run
+
+```
+/basher-convert
+```
+
+Exit Claude, then:
+```bash
+~/.basher/basher.sh
+```
+
+### Full Pipeline Summary
+
+```
+Transcripts → /clu-analyze → Review conflicts → /clu-prd → /basher-convert → basher.sh → Working code
+```
+
+---
+
 ## Next Steps
 
 - Read the [full README](../README.md) for detailed documentation
+- Read the [CLU Guide](CLU-GUIDE.md) for detailed transcript analysis docs
 - Check [Configuration Options](../README.md#configuration-options) to customize Basher
 - Set up [CacheBash Integration](../README.md#cachebash-integration-optional) for mobile monitoring
 - See [Troubleshooting](TROUBLESHOOTING.md) if you run into issues
+- Check [Anti-Patterns](TROUBLESHOOTING.md#anti-patterns--known-pitfalls) before debugging strange behavior

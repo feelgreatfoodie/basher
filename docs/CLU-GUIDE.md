@@ -312,60 +312,133 @@ After reviewing, you can:
 
 ## End-to-End Example
 
-### Scenario: Planning a User Authentication System
+### Real-World Test: User Management API
 
-You have 3 transcripts from different meetings about adding auth to your app.
+This example is from an actual live test of the full CLU → Basher pipeline. Three transcripts with planted contradictions went through the complete pipeline and produced a working API.
 
-#### 1. Set Up
+#### The Transcripts
 
-```bash
-cd my-project
-~/.basher/basher-init.sh       # Creates ./clu/transcripts/
+**`meeting-kickoff.txt`** — Project kickoff (2 participants: Alice PM, Bob Developer)
+```
+Alice: Let's build a REST API for user management.
+Bob: Sounds good. Node.js and Express?
+Alice: Yes. Email and password auth first, OAuth can wait.
+Bob: What about a database?
+Alice: Start simple. We can figure that out.
 ```
 
-#### 2. Add Transcripts
-
-```bash
-# Copy your meeting notes
-cp ~/notes/kickoff-auth.txt ./clu/transcripts/
-cp ~/notes/security-review.txt ./clu/transcripts/
-cp ~/notes/ux-feedback.txt ./clu/transcripts/
+**`design-review.txt`** — Technical deep-dive (3 participants: Alice, Bob, Charlie Architect)
+```
+Charlie: Have we considered GraphQL? It would reduce over-fetching.
+Alice: We decided on REST in the kickoff. Let's keep it simple.
+Charlie: Fine, but we should add rate limiting on all public endpoints.
+Bob: Agreed. Standard rate limits, maybe 100 requests per minute.
 ```
 
-#### 3. Run CLU with PRD
-
-```bash
-claude /clu --prd
+**`stakeholder-feedback.md`** — Stakeholder requirements (5 participants including VP Engineering, Security Lead)
+```
+VP Engineering: I want 95% test coverage minimum. No exceptions.
+Security Lead: All passwords must be hashed with bcrypt. And we need
+OAuth support for the launch — not later, for launch.
+CEO: I told Alice OAuth can wait until v2. Let's ship fast.
 ```
 
-CLU will:
-- Discover 3 transcripts, generate manifest
-- Extract entities from each (participants, decisions, requirements, etc.)
-- Cross-reference: find that all 3 mention "email/password login" (high consensus), but kickoff says "OAuth later" while security-review says "OAuth required for launch" (conflict!)
-- Generate reports highlighting the OAuth conflict
-- Generate a Basher-compatible PRD with the conflict as an open question
+Note the **planted conflicts**: REST vs GraphQL (Charlie vs team), and OAuth timing (CEO vs Security Lead).
 
-#### 4. Review
+#### Step 1: Set Up
 
 ```bash
-# Check the executive summary
-cat ./clu/SUMMARY.md
-
-# Resolve the OAuth conflict
-vim ./clu/conflicts.md          # Add your resolution
-
-# Review the PRD
-vim ./basher/prd.md              # Edit if needed
+mkdir user-api && cd user-api && git init
+~/.basher/basher-init.sh
+cp meeting-kickoff.txt design-review.txt stakeholder-feedback.md ./clu/transcripts/
 ```
 
-#### 5. Continue to Basher
+#### Step 2: Analyze
 
 ```bash
-claude /basher-convert           # Convert PRD to JSON tasks
-~/.basher/basher.sh              # Run autonomous implementation
+claude /clu-analyze
 ```
 
-The full pipeline: transcripts → CLU → PRD → Basher → working auth system.
+CLU runs 3 Sonnet subagents in parallel, each extracting structured data. Then Opus cross-references everything.
+
+**Results:**
+- 30 entities extracted across 3 transcripts
+- 8 unique participants (deduplicated across sources)
+- 13 requirements ranked by consensus
+- 8 decisions tracked chronologically
+- **2 conflicts detected:**
+  1. **API Protocol**: REST (2 sources, Alice + Bob) vs GraphQL (1 source, Charlie)
+  2. **OAuth Timing**: "OAuth later" (CEO, Alice) vs "OAuth for launch" (Security Lead)
+- **5 gaps identified:** database technology, rate limit specifics, deployment strategy, enterprise client definition, dark mode specs
+
+#### Step 3: Review Conflicts
+
+```bash
+cat ./clu/conflicts.md
+```
+
+Each conflict shows both positions with source citations and suggested resolution based on consensus strength. In this case:
+- REST wins (2 sources vs 1)
+- OAuth timing remains an open question (authority conflict: CEO vs Security Lead)
+
+#### Step 4: Generate PRD
+
+```bash
+claude /clu-prd
+```
+
+CLU maps 13 requirements into 6 user stories:
+
+| Priority | Story | Consensus |
+|----------|-------|-----------|
+| P1 | US-001: Initialize Node.js + Express | 3 sources |
+| P1 | US-002: User data model and database layer | 2 sources |
+| P1 | US-003: User CRUD REST API endpoints | 3 sources |
+| P2 | US-004: Email/password authentication | 2 sources |
+| P2 | US-005: Rate limiting on public endpoints | 1 source (Charlie) |
+| P2 | US-006: Test infrastructure and coverage | 1 source (VP Eng, but critical) |
+
+The OAuth conflict becomes an "Open Question" in the PRD rather than a premature decision.
+
+#### Step 5: Convert and Build
+
+```bash
+claude /basher-convert     # PRD → prd.json
+~/.basher/basher.sh        # Autonomous implementation
+```
+
+Basher runs 6 iterations (one per story):
+- Each iteration starts a fresh Claude session
+- Reads `progress.txt` for learnings from previous iterations
+- Implements one story, runs quality gates, commits
+
+#### Results
+
+```
+BASHER COMPLETE - All stories implemented!
+
+Branch: basher/user-management-api
+Commits: 13
+Test suites: 6
+Tests: 89 passing
+Coverage: 99.58% statements, 96.26% branches, 100% functions
+```
+
+**What was built:**
+- Express 5.2.1 REST API with app/server separation
+- SQLite database (better-sqlite3) with WAL mode
+- Full CRUD endpoints with pagination and validation
+- JWT authentication with bcrypt password hashing
+- In-memory rate limiting (100 unauth, 200 auth req/min)
+- Jest 30 test suite with 95%+ coverage thresholds
+
+**Knowledge captured in `progress.txt`:**
+- Express 5 vs 4 gotchas (error handler signatures, JSON parse error types)
+- ESLint 10 flat config requirements (Node 24 globals: fetch, setInterval, etc.)
+- SQLite unique constraint error codes
+- Pattern: `app.listen(0)` for random port assignment in tests
+
+The full pipeline: 3 messy transcripts → CLU analysis → 6 user stories → 89 passing tests.
 
 ---
 
@@ -421,6 +494,23 @@ claude mcp add --transport http cachebash \
 bash -n ~/.basher/clu.sh         # Check syntax
 bash -n ~/.basher/lib/transcript-utils.sh
 ```
+
+### CLU iterations complete instantly
+
+**Problem:** `clu.sh` runs but iterations finish in under 1 second with no analysis output.
+
+**Cause:** The script was using `--prompt-file` which is not a valid Claude CLI flag. The `|| true` in the script silently swallowed the error.
+
+**Solution:** Update to the latest version. The fix pipes the prompt via stdin:
+```bash
+# Broken (old):
+claude --prompt-file "$prompt_file" --dangerously-skip-permissions
+
+# Fixed (current):
+cat "$prompt_file" | claude -p --dangerously-skip-permissions
+```
+
+See [Anti-Patterns](TROUBLESHOOTING.md#anti-patterns--known-pitfalls) for the full list of known pitfalls.
 
 ---
 
@@ -546,7 +636,7 @@ similar = collection.query(query_texts=["user authentication"], n_results=5)
 ```python
 client = anthropic.Anthropic()
 response = client.messages.create(
-    model="claude-sonnet-4-5-20250929",
+    model="claude-sonnet-4-5-20250929",  # Or use alias "sonnet" in CLI
     max_tokens=8192,
     system=extraction_system_prompt,
     messages=[{"role": "user", "content": f"Extract entities from:\n\n{transcript}"}]

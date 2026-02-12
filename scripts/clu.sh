@@ -264,11 +264,11 @@ run_clu() {
     local claude_cmd="claude"
 
     # Orchestrator uses Opus
-    claude_cmd="$claude_cmd --model claude-opus-4-5-20251101"
+    claude_cmd="$claude_cmd --model opus"
 
-    # Run Claude with orchestrator prompt
+    # Run Claude with orchestrator prompt piped via stdin
     local output
-    output=$($claude_cmd --prompt-file "$prompt_file" --dangerously-skip-permissions 2>&1) || true
+    output=$(cat "$prompt_file" | $claude_cmd -p --dangerously-skip-permissions 2>&1) || true
 
     # Check for completion signal
     if echo "$output" | grep -q '<clu>COMPLETE</clu>'; then

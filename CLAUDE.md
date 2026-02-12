@@ -39,7 +39,9 @@ basher/
 │   ├── detect-stack.sh        # Tech stack auto-detection
 │   └── transcript-utils.sh    # CLU transcript utilities
 ├── docs/                       # Documentation
-│   └── CLU-GUIDE.md           # CLU user guide + learning module
+│   ├── CLU-GUIDE.md           # CLU user guide + learning module
+│   ├── QUICK-START.md         # Quick start (Basher + CLU paths)
+│   └── TROUBLESHOOTING.md     # Troubleshooting + anti-patterns
 ├── templates/                  # Configuration templates
 │   ├── basher.config.json     # Basher config template
 │   └── clu.config.json        # CLU config template
@@ -279,15 +281,38 @@ CLU (Codified Likeness Utility) ingests multiple text transcripts, extracts stru
 ### Running CLU
 
 ```bash
-# Via Claude Code skill
-claude /clu                    # Full pipeline
-claude /clu-analyze            # Analysis only (no PRD)
-claude /clu-prd                # Generate PRD from existing analysis
+# Via Claude Code skills (interactive — recommended for first time)
+claude /clu-analyze            # Step 1: Extract + synthesize (no PRD)
+claude /clu-prd                # Step 2: Generate PRD from analysis
+claude /basher-convert         # Step 3: Convert PRD to JSON tasks
 
-# Via bash script
-~/.basher/clu.sh               # Full pipeline
-~/.basher/clu.sh --prd         # Include PRD generation
+# Via bash script (autonomous / AFK)
+~/.basher/clu.sh               # Analysis only
+~/.basher/clu.sh --prd         # Analysis + PRD generation
 ~/.basher/clu.sh --dir ~/notes # Custom transcript directory
+```
+
+### Full Pipeline (Recommended Workflow)
+
+```bash
+# 1. Set up project and add transcripts
+mkdir my-project && cd my-project && git init
+~/.basher/basher-init.sh
+cp meeting-notes.txt design-review.txt ./clu/transcripts/
+
+# 2. Analyze transcripts (inside Claude Code)
+claude /clu-analyze
+
+# 3. Review results
+cat ./clu/SUMMARY.md           # Executive summary
+cat ./clu/conflicts.md         # Contradictions to resolve
+
+# 4. Generate PRD from analysis
+claude /clu-prd
+
+# 5. Convert to tasks and run autonomously
+claude /basher-convert
+~/.basher/basher.sh
 ```
 
 ### Testing CLU
@@ -374,6 +399,44 @@ After modifying saas-blueprint:
 7. **Knowledge Capture** - Learnings must be captured and promoted to appropriate levels.
 
 8. **Commit Authorship** - ALL commits authored by `feelgreatfoodie`. NEVER add co-author lines under any circumstances.
+
+9. **Use Model Aliases** - Always use `opus`, `sonnet`, `haiku` instead of hardcoded model IDs like `claude-opus-4-5-20251101`. Aliases are forward-compatible.
+
+10. **Pipe Prompts via stdin** - Claude CLI does NOT support `--prompt-file`. Always use `cat file | claude -p`.
+
+## Anti-Patterns (Do NOT Do These)
+
+These were discovered during live testing and caused real failures:
+
+| Anti-Pattern | Why It's Bad | Correct Approach |
+|-------------|-------------|-----------------|
+| `claude --prompt-file file.md` | Not a valid CLI flag; fails silently with `\|\| true` | `cat file.md \| claude -p` |
+| `|| true` without output validation | Swallows ALL errors including catastrophic ones | Check output length/content after `\|\| true` |
+| Hardcoded model IDs (`claude-opus-4-5-20251101`) | Breaks when Anthropic releases new versions | Use aliases: `opus`, `sonnet`, `haiku` |
+| Assuming `main` branch exists | Some repos use `master`; branch creation fails | Check `git.baseBranch` config or detect dynamically |
+| Skills only in `skills/*/prompt.md` | Claude Code can't discover them as slash commands | Must also register in `.claude/commands/` |
+| Running `basher.sh` without initial commit | Can't create branch from non-existent `main` | Always ensure at least one commit exists |
+
+## Learnings from Live Testing (2026-02-11)
+
+### CLU Pipeline
+- Sonnet handles transcript extraction well in parallel (3 concurrent subagents)
+- Opus cross-reference synthesis catches subtle conflicts that would be missed with keyword matching alone
+- Conflict detection works best when transcripts include speaker names and explicit positions
+- The `open-questions` conflict mode is the safest default — lets humans resolve ambiguity
+
+### Basher Sequential Mode
+- Fresh context per iteration is the key innovation — iteration #6 is as accurate as iteration #1
+- `progress.txt` as a knowledge accumulation mechanism works well — later iterations build on earlier learnings
+- Express 5, ESLint 10 flat config, Jest 30, Node 24 — modern tooling works cleanly with Basher
+- Story granularity matters: 6 stories for a REST API with auth is about right (not too few, not too many)
+- Quality gates (lint + test) catch real issues and force the agent to fix them before proceeding
+
+### Claude CLI
+- `-p` / `--print` is the correct flag for non-interactive (piped) mode
+- `--dangerously-skip-permissions` is required for fully autonomous execution
+- Model aliases (`opus`, `sonnet`) work and are preferred over full model IDs
+- The CLI accepts prompts via stdin: `echo "prompt" | claude -p`
 
 ## Knowledge Accumulation System
 

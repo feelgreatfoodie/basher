@@ -429,12 +429,12 @@ run_claude_sequential() {
     local claude_cmd="claude"
 
     if [[ "$model_to_use" == "opus" ]]; then
-        claude_cmd="$claude_cmd --model claude-opus-4-5-20251101"
+        claude_cmd="$claude_cmd --model opus"
     fi
 
-    # Run Claude with prompt file (no --print to allow MCP tools)
+    # Run Claude with prompt piped via stdin in print mode
     local output
-    output=$($claude_cmd --prompt-file "$prompt_file" --dangerously-skip-permissions 2>&1) || true
+    output=$(cat "$prompt_file" | $claude_cmd -p --dangerously-skip-permissions 2>&1) || true
 
     # Check for completion signals
     if echo "$output" | grep -q '<basher>COMPLETE</basher>'; then
@@ -492,12 +492,12 @@ run_claude_parallel() {
     local claude_cmd="claude"
 
     if [[ "$orchestrator_model" == "opus" ]]; then
-        claude_cmd="$claude_cmd --model claude-opus-4-5-20251101"
+        claude_cmd="$claude_cmd --model opus"
     fi
 
     # Run Claude orchestrator (single run, it manages iterations internally)
     local output
-    output=$($claude_cmd --prompt-file "$prompt_file" --dangerously-skip-permissions 2>&1) || true
+    output=$(cat "$prompt_file" | $claude_cmd -p --dangerously-skip-permissions 2>&1) || true
 
     if echo "$output" | grep -q '<basher>COMPLETE</basher>'; then
         log_success "All stories completed!"

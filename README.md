@@ -11,6 +11,8 @@ Basher is an automation system that runs Claude Code (Anthropic's AI coding assi
 
 ## TL;DR
 
+### Path A: Single Transcript (Quick)
+
 ```bash
 # 1. Install
 curl -fsSL https://raw.githubusercontent.com/feelgreatfoodie/basher/main/install.sh | bash
@@ -30,7 +32,28 @@ claude            # Start Claude Code
 ~/.basher/basher.sh
 ```
 
-That's it. Basher builds your app while you grab coffee.
+### Path B: Multiple Transcripts (CLU Pipeline)
+
+```bash
+# 1. Install + init (same as above)
+curl -fsSL https://raw.githubusercontent.com/feelgreatfoodie/basher/main/install.sh | bash
+cd my-project && git init
+~/.basher/basher-init.sh
+
+# 2. Drop transcripts
+cp meeting-notes.txt design-review.txt feedback.md ./clu/transcripts/
+
+# 3. Analyze → PRD → Build (all inside Claude Code)
+claude
+/clu-analyze        # Extract + cross-reference
+/clu-prd            # Generate PRD from analysis
+/basher-convert     # Convert to tasks
+
+# 4. Run!
+~/.basher/basher.sh
+```
+
+Both paths end the same way: Basher builds your app while you grab coffee.
 
 ---
 
@@ -49,8 +72,9 @@ That's it. Basher builds your app while you grab coffee.
 11. [Troubleshooting](#troubleshooting)
 12. [FAQ](#faq)
 13. [CLU — Multi-Transcript Analysis & Synthesis](#clu--multi-transcript-analysis--synthesis)
-14. [The Grid — Ecosystem](#the-grid--ecosystem)
-15. [Contributing](#contributing)
+14. [Anti-Patterns & Gotchas](#anti-patterns--gotchas)
+15. [The Grid — Ecosystem](#the-grid--ecosystem)
+16. [Contributing](#contributing)
 
 ---
 
@@ -1017,7 +1041,65 @@ Create `./clu/clu.config.json` to customize behavior:
 }
 ```
 
+### End-to-End Example: From 3 Transcripts to 89 Passing Tests
+
+This is a real example from live testing. Three transcripts discussing a user management API — with planted contradictions — went through the full pipeline.
+
+**Transcripts:**
+- `meeting-kickoff.txt` — 2 participants discussing project setup, REST API, email/password auth
+- `design-review.txt` — 3 participants debating REST vs GraphQL, rate limiting
+- `stakeholder-feedback.md` — 5 stakeholders with requirements on testing, security, OAuth
+
+**Step 1: Analyze**
+```bash
+claude /clu-analyze
+```
+
+CLU extracted 30 entities across 3 transcripts, found:
+- 2 conflicts (REST vs GraphQL, OAuth timing)
+- 5 gaps (database tech, rate limiting specs, deployment strategy)
+- 8 decisions tracked chronologically
+- 13 requirements ranked by consensus
+
+**Step 2: Generate PRD**
+```bash
+claude /clu-prd
+```
+
+Mapped 13 requirements into 6 user stories with proper dependency ordering:
+1. US-001: Initialize Node.js + Express project (P1)
+2. US-002: User data model and database layer (P1)
+3. US-003: User CRUD REST API endpoints (P1)
+4. US-004: Email/password authentication (P2)
+5. US-005: Rate limiting on public endpoints (P2)
+6. US-006: Test infrastructure and coverage (P2)
+
+Conflicts became "Open Questions" in the PRD.
+
+**Step 3: Convert and run**
+```bash
+claude /basher-convert
+~/.basher/basher.sh
+```
+
+**Result:** 6 iterations, 13 commits, 89 tests passing, 99.58% code coverage. Complete Express 5 API with SQLite, JWT auth, bcrypt, and rate limiting — built autonomously.
+
 For detailed documentation, see [CLU Guide](docs/CLU-GUIDE.md).
+
+---
+
+## Anti-Patterns & Gotchas
+
+Hard-won lessons from live testing. See [full Troubleshooting guide](docs/TROUBLESHOOTING.md#anti-patterns--known-pitfalls) for details.
+
+| Anti-Pattern | Symptom | Fix |
+|-------------|---------|-----|
+| `--prompt-file` flag | Iterations complete instantly (< 1s) | Use `cat file \| claude -p` instead |
+| `\|\| true` swallowing errors | Script loops with no output | Add output validation after command |
+| Hardcoded model IDs | Breaks on model version changes | Use aliases: `opus`, `sonnet`, `haiku` |
+| Missing initial commit | Branch creation fails | `git add . && git commit` before basher.sh |
+| `main` vs `master` mismatch | Branch creation fails | `git branch -m master main` or update config |
+| Skills not in `.claude/commands/` | Slash commands not recognized | Re-run `install.sh` |
 
 ---
 

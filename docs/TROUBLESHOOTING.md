@@ -10,8 +10,9 @@ This guide covers common issues and their solutions when using Basher for Claude
 2. [Runtime Errors](#runtime-errors)
 3. [Quality Gate Failures](#quality-gate-failures)
 4. [Git Issues](#git-issues)
-5. [Performance Issues](#performance-issues)
-6. [Getting Help](#getting-help)
+5. [Anti-Patterns & Known Pitfalls](#anti-patterns--known-pitfalls)
+6. [Performance Issues](#performance-issues)
+7. [Getting Help](#getting-help)
 
 ---
 
@@ -423,6 +424,127 @@ git commit -m "Initial commit"
 - Files were modified but not saved
 
 **Solution:** Check `./basher/progress.txt` to see what Claude did (or didn't do).
+
+---
+
+## Anti-Patterns & Known Pitfalls
+
+These are hard-won lessons from live testing. Avoid these mistakes.
+
+### `--prompt-file` is NOT a valid Claude CLI flag
+
+**Problem:** Scripts using `--prompt-file` will fail silently when combined with `|| true`.
+
+```bash
+# BROKEN — --prompt-file is not a valid Claude CLI flag
+output=$(claude --prompt-file "$prompt_file" --dangerously-skip-permissions 2>&1) || true
+```
+
+**Symptom:** Iterations complete instantly (< 1 second each) with no actual work done. The `|| true` swallows the error, so the script keeps looping through all iterations doing nothing.
+
+**Fix:** Pipe the prompt file via stdin with `-p` (print/non-interactive mode):
+
+```bash
+# CORRECT — pipe prompt via stdin
+output=$(cat "$prompt_file" | claude -p --dangerously-skip-permissions 2>&1) || true
+```
+
+**Key insight:** If iterations are completing in under 2 seconds, Claude isn't actually running. Check the invocation method.
+
+---
+
+### Silent failures from `|| true`
+
+**Problem:** `|| true` at the end of a command suppresses all errors, making failures invisible.
+
+**Symptom:** Scripts appear to work but produce no output. No error messages. Progress logs show rapid empty iterations.
+
+**Best practice:** When using `|| true` for fault tolerance, add a validation check:
+
+```bash
+output=$(some_command 2>&1) || true
+
+# Validate the output isn't empty
+if [[ -z "$output" || ${#output} -lt 50 ]]; then
+    log_error "Command produced no output — likely failed silently"
+    exit 1
+fi
+```
+
+---
+
+### `main` vs `master` branch mismatch
+
+**Problem:** Basher defaults to creating branches from `main`, but some repos use `master`.
+
+**Symptom:** `fatal: 'main' is not a commit and a branch cannot be created from it`
+
+**Fix:** Either rename your branch or update `basher.config.json`:
+
+```bash
+# Option A: Rename master to main
+git branch -m master main
+
+# Option B: Update Basher config
+# In ./basher/basher.config.json:
+{
+  "git": {
+    "baseBranch": "master"
+  }
+}
+```
+
+---
+
+### Hardcoded model IDs break on updates
+
+**Problem:** Using full model IDs like `claude-opus-4-5-20251101` will break when Anthropic releases new versions.
+
+**Fix:** Use model aliases instead:
+
+```bash
+# BROKEN — hardcoded model ID, will go stale
+claude --model claude-opus-4-5-20251101
+
+# CORRECT — alias always resolves to latest
+claude --model opus
+```
+
+Valid aliases: `opus`, `sonnet`, `haiku`
+
+---
+
+### Skills not discoverable as slash commands
+
+**Problem:** Skills defined in `skills/*/prompt.md` aren't automatically registered with Claude Code.
+
+**Symptom:** Typing `/clu` in Claude Code shows "unknown command."
+
+**Fix:** Skills must also be registered in `.claude/commands/`. The `install.sh` script handles this, but if you've added new skills manually:
+
+```bash
+# Skills need to be in .claude/commands/ (symlinked or copied)
+ls ~/.claude/commands/
+# Should show: clu.md, clu-analyze.md, clu-prd.md, basher-convert.md, etc.
+```
+
+Re-run `install.sh` to fix missing skill registrations.
+
+---
+
+### Initial commit required before basher.sh
+
+**Problem:** `basher.sh` tries to create a branch, which requires at least one commit.
+
+**Symptom:** `fatal: Not a valid object name: 'main'`
+
+**Fix:** Make an initial commit before running Basher:
+
+```bash
+git add .
+git commit -m "Initial commit"
+~/.basher/basher.sh
+```
 
 ---
 
