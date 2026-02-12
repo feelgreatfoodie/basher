@@ -50,3 +50,32 @@ def test_list_transcripts(client):
 def test_list_transcripts_project_not_found(client):
     response = client.get("/api/v1/projects/nonexistent/transcripts")
     assert response.status_code == 404
+
+
+def test_upload_unsupported_file_type(client):
+    """Uploading a file with unsupported extension should return 400."""
+    project = client.post("/api/v1/projects", json={"name": "Test"}).json()
+    project_id = project["id"]
+
+    response = client.post(
+        f"/api/v1/projects/{project_id}/transcripts",
+        files={"file": ("data.csv", io.BytesIO(b"a,b,c"), "text/csv")},
+    )
+    assert response.status_code == 400
+    assert "Unsupported file type" in response.json()["detail"]
+
+
+def test_upload_markdown_file(client):
+    """Markdown files should be accepted and parsed as text."""
+    project = client.post("/api/v1/projects", json={"name": "Test"}).json()
+    project_id = project["id"]
+
+    md_content = b"# Meeting Notes\n\nAlice: Let's use REST."
+    response = client.post(
+        f"/api/v1/projects/{project_id}/transcripts",
+        files={"file": ("notes.md", io.BytesIO(md_content), "text/markdown")},
+    )
+    assert response.status_code == 201
+    data = response.json()
+    assert data["filename"] == "notes.md"
+    assert data["word_count"] > 0

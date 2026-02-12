@@ -7,8 +7,12 @@ from app.database import get_db
 from app.dependencies import get_tenant_id
 from app.models import Project, Transcript
 from app.schemas import TranscriptResponse, TranscriptList
+from app.services.parsers import detect_and_parse
 
 router = APIRouter(prefix="/projects/{project_id}/transcripts", tags=["transcripts"])
+
+# Accepted file extensions
+ACCEPTED_EXTENSIONS = {".txt", ".md", ".pdf", ".docx"}
 
 
 def detect_transcript_type(content: str, filename: str) -> str:
@@ -25,6 +29,16 @@ def detect_transcript_type(content: str, filename: str) -> str:
     return "other"
 
 
+def _validate_extension(filename: str) -> None:
+    """Validate that the file has an accepted extension."""
+    lower = filename.lower()
+    if not any(lower.endswith(ext) for ext in ACCEPTED_EXTENSIONS):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported file type. Accepted: {', '.join(sorted(ACCEPTED_EXTENSIONS))}",
+        )
+
+
 @router.post("", response_model=TranscriptResponse, status_code=201)
 async def upload_transcript(
     project_id: str,
@@ -39,13 +53,24 @@ async def upload_transcript(
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
 
-    content = (await file.read()).decode("utf-8")
+    filename = file.filename or "unknown.txt"
+    _validate_extension(filename)
+
+    raw_bytes = await file.read()
+
+    try:
+        content = detect_and_parse(filename, raw_bytes)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to parse file: {e}")
+
     word_count = len(content.split())
-    transcript_type = detect_transcript_type(content, file.filename or "unknown.txt")
+    transcript_type = detect_transcript_type(content, filename)
 
     transcript = Transcript(
         project_id=project_id,
-        filename=file.filename or "unknown.txt",
+        filename=filename,
         content=content,
         transcript_type=transcript_type,
         word_count=word_count,
