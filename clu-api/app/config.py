@@ -16,6 +16,10 @@ class Settings(BaseSettings):
     # Redis
     redis_url: str = "redis://localhost:6379/0"
 
+    # Logging
+    log_json: bool = False
+    log_level: str = "INFO"
+
     model_config = {"env_prefix": "", "case_sensitive": False}
 
 

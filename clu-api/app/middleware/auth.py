@@ -15,7 +15,7 @@ from app.database import SessionLocal
 from app.models.api_key import ApiKey
 
 # Paths that don't require authentication
-PUBLIC_PATHS = {"/health", "/docs", "/openapi.json", "/redoc"}
+PUBLIC_PATHS = {"/health", "/health/ready", "/docs", "/openapi.json", "/redoc"}
 
 
 def _hash_key(key: str) -> str:

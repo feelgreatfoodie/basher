@@ -12,7 +12,7 @@ from app.config import settings
 logger = logging.getLogger(__name__)
 
 # Paths exempt from rate limiting
-RATE_LIMIT_EXEMPT = {"/health", "/docs", "/openapi.json", "/redoc"}
+RATE_LIMIT_EXEMPT = {"/health", "/health/ready", "/docs", "/openapi.json", "/redoc"}
 
 
 def _get_redis_client():

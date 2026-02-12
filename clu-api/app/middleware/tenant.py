@@ -12,7 +12,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 logger = logging.getLogger(__name__)
 
 # Paths that don't need tenant context
-TENANT_EXEMPT = {"/health", "/docs", "/openapi.json", "/redoc"}
+TENANT_EXEMPT = {"/health", "/health/ready", "/docs", "/openapi.json", "/redoc"}
 
 
 class TenantMiddleware(BaseHTTPMiddleware):
