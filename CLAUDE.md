@@ -625,4 +625,27 @@ Issues are handled by severity:
 - **Medium** - Spawn cleanup subagent
 - **Major** - Ask user via CacheBash
 
-*Last updated: 2026-02-11*
+## Learnings from Live Testing (2026-02-12)
+
+### Vercel CLI Env Vars
+- `echo "value" | vercel env add` appends a literal `\n` to the stored value, causing auth failures (e.g., Google OAuth `invalid_client`). Always use `printf '%s' 'value' | vercel env add` instead
+- `vercel env add` only accepts one environment at a time (production, preview, OR development — not all three)
+- `vercel link` and `vercel env pull` overwrite `.env.local` — back up local-only vars before running
+
+### Supabase + Drizzle
+- Supabase transaction pooler (port 6543) does NOT support prepared statements. Use `postgres(url, { prepare: false })` with postgres.js
+- `#` and `+` in Supabase passwords must be URL-encoded (`%23`, `%2B`) and the value wrapped in double quotes in `.env` files
+- `drizzle-kit` does NOT auto-load `.env.local`. Requires explicit dotenv: `import { config } from 'dotenv'; config({ path: '.env.local' });`
+- Drizzle `boolean('col').default(false)` is nullable by default — add `.notNull()` for non-nullable
+
+### Auth.js v5 + DrizzleAdapter
+- DrizzleAdapter defaults to **singular** table names (`user`, `account`, `session`). If using plural names in schema, pass explicit mapping: `DrizzleAdapter(db, { usersTable: users, accountsTable: accounts, ... })`
+- GCP OAuth client creation for personal Gmail projects requires Console UI — `gcloud alpha iap oauth-brands` doesn't work outside organizations
+
+### Tailwind CSS
+- Tailwind preflight removes `cursor: pointer` from buttons. Add `cursor-pointer` to button base styles. Add `active:scale-[0.98]` for click feedback
+
+### Next.js Route Groups
+- After moving pages into `(app)/` route group, delete `.next/` cache — stale cache causes phantom type errors on old routes
+
+*Last updated: 2026-02-12*

@@ -11,9 +11,10 @@ This guide covers common issues and their solutions when using Basher for Claude
 3. [Quality Gate Failures](#quality-gate-failures)
 4. [Git Issues](#git-issues)
 5. [Anti-Patterns & Known Pitfalls](#anti-patterns--known-pitfalls)
-6. [CLU API & Docker Issues](#clu-api--docker-issues)
-7. [Performance Issues](#performance-issues)
-8. [Getting Help](#getting-help)
+6. [Vercel & Deployment Issues](#vercel--deployment-issues)
+7. [CLU API & Docker Issues](#clu-api--docker-issues)
+8. [Performance Issues](#performance-issues)
+9. [Getting Help](#getting-help)
 
 ---
 
@@ -545,6 +546,152 @@ Re-run `install.sh` to fix missing skill registrations.
 git add .
 git commit -m "Initial commit"
 ~/.basher/basher.sh
+```
+
+---
+
+## Vercel & Deployment Issues
+
+### Vercel env vars have trailing `\n` causing auth failures
+
+**Problem:** Google OAuth returns `invalid_client` (401), or database connections fail with malformed URL errors.
+
+**Cause:** Using `echo "value" | vercel env add` appends a literal newline character to the stored value. The env var becomes `your-client-id\n` instead of `your-client-id`.
+
+**Diagnosis:**
+```bash
+vercel env pull .env.check
+grep AUTH_GOOGLE_ID .env.check
+# If you see \n at the end, the values are corrupted
+```
+
+**Fix:** Use `printf '%s'` which does NOT add a trailing newline:
+```bash
+# BROKEN — echo adds \n
+echo "your-value" | vercel env add VAR_NAME production
+
+# CORRECT — printf '%s' does not add \n
+printf '%s' 'your-value' | vercel env add VAR_NAME production
+```
+
+To fix existing corrupted vars:
+```bash
+vercel env rm VAR_NAME production -y
+printf '%s' 'correct-value' | vercel env add VAR_NAME production
+vercel --prod  # Redeploy
+```
+
+---
+
+### `vercel link` or `vercel env pull` overwrites `.env.local`
+
+**Problem:** After running `vercel link`, your local `.env.local` loses custom environment variables (database URLs, auth secrets, etc.).
+
+**Cause:** `vercel link` downloads the project's Vercel env vars and replaces the local file.
+
+**Fix:** Back up `.env.local` before running Vercel CLI commands that modify it:
+```bash
+cp .env.local .env.local.backup
+vercel link
+# Merge back any missing vars from backup
+```
+
+---
+
+### Supabase connection fails with "invalid connection string"
+
+**Problem:** Database connection fails when password contains `#`, `+`, or other special characters.
+
+**Cause:** `#` is interpreted as a URL fragment delimiter. `+` is interpreted as a space.
+
+**Fix:** URL-encode special characters and wrap in double quotes:
+```bash
+# In .env.local:
+DATABASE_URL="postgresql://user:p%23ssw%2Brd@host:6543/postgres"
+# # → %23, + → %2B
+```
+
+---
+
+### Supabase "prepared statement already exists" error
+
+**Problem:** Database queries fail with prepared statement errors when using Supabase's transaction pooler (port 6543).
+
+**Cause:** `postgres.js` uses prepared statements by default, but Supabase's transaction pooler (PgBouncer) doesn't support them.
+
+**Fix:** Disable prepared statements:
+```typescript
+const client = postgres(process.env.DATABASE_URL!, { prepare: false });
+```
+
+**Alternative:** Use the session pooler (port 5432) instead, which supports prepared statements but has lower connection limits.
+
+---
+
+### Auth.js "Configuration" error on sign-in
+
+**Problem:** Clicking "Sign in with Google" shows "There is a problem with the server configuration."
+
+**Common causes:**
+
+1. **DrizzleAdapter table name mismatch:** Adapter defaults to singular names (`user`, `account`, `session`) but your schema uses plural. Fix:
+   ```typescript
+   DrizzleAdapter(db, {
+     usersTable: users,
+     accountsTable: accounts,
+     sessionsTable: sessions,
+     verificationTokensTable: verificationTokens,
+   })
+   ```
+
+2. **Missing env vars:** `AUTH_SECRET`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET` must all be set.
+
+3. **drizzle-kit didn't load `.env.local`:** Add explicit dotenv to `drizzle.config.ts`:
+   ```typescript
+   import { config } from 'dotenv';
+   config({ path: '.env.local' });
+   ```
+
+---
+
+### Google OAuth "invalid_client" (401) error
+
+**Problem:** Google sign-in fails with "The OAuth client was not found."
+
+**Common causes:**
+
+1. **Trailing newline in client ID** (most common with Vercel). See "Vercel env vars have trailing `\n`" above.
+2. **OAuth client was deleted or not saved** in GCP Console.
+3. **Wrong GCP project** selected — check the project selector in top-left of Console.
+4. **OAuth consent screen not configured** — must be set up before creating client IDs.
+
+**Fix:** Verify the client exists in GCP Console > APIs & Services > Credentials, and that the exact client ID matches what's in your env vars.
+
+---
+
+### Tailwind buttons have no cursor pointer
+
+**Problem:** Buttons don't show the hand cursor on hover and have no click feedback.
+
+**Cause:** Tailwind CSS preflight resets `cursor` on `<button>` elements.
+
+**Fix:** Add to your Button component's base classes:
+```
+cursor-pointer active:scale-[0.98]
+```
+
+---
+
+### Type errors after moving pages to route groups
+
+**Problem:** `tsc --noEmit` shows errors for routes that no longer exist after restructuring into `(app)/`.
+
+**Cause:** Stale `.next/` build cache still references old route paths.
+
+**Fix:**
+```bash
+rm -rf .next
+npx tsc --noEmit
 ```
 
 ---
